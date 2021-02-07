@@ -1,8 +1,12 @@
+import json
 import os
+import pprint
+import subprocess
 import sys
 from typing import Optional
 
 from cftool.models import IniFile
+import yaml
 
 CONFIG_FILE = "cftool.json"
 
@@ -10,9 +14,10 @@ CONFIG_FILE = "cftool.json"
 def run_cf(cmd: str):
     profile_arg = "--profile " + current_profile
 
-    cmd = f"aws cloudformation {profile_arg} {cmd}"
+    cmd = f"aws cloudformation --output yaml {profile_arg} {cmd}"
     print("> " + cmd)
-    os.system(cmd)
+
+    subprocess.call(cmd)
 
 
 current_profile = "default"
