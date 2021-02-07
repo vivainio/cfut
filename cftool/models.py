@@ -17,7 +17,6 @@ class CfnTemplate(BaseModel):
     parameters: Optional[Dict[str, Any]]
 
 
-
 class IniFile(BaseModel):
     profile: str
     templates: Dict[str, CfnTemplate]

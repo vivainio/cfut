@@ -16,15 +16,14 @@ def do_init(args):
 
     template_files = Path(".").glob("**/*.y*ml")
     templates = {
-        t.stem: CfnTemplate(name=t.stem, path=str(t).replace('\\', '/')) for t in template_files
+        t.stem: CfnTemplate(name=t.stem, path=str(t).replace("\\", "/"))
+        for t in template_files
     }
 
     if len(templates) == 1:
         templates = {"default": list(templates.values())[0]}
 
-    ini = IniFile(
-        profile="default",
-        templates=templates)
+    ini = IniFile(profile="default", templates=templates)
     cont = ini.json(indent=2)
     open(CONFIG_FILE, "w").write(cont)
 
@@ -82,7 +81,9 @@ def change_to_root_dir():
     if found:
         os.chdir(found.parent)
         return
-    resp = input(f"Config file {commands.CONFIG_FILE} not found, create it in {os.getcwd()} [y/n]? ")
+    resp = input(
+        f"Config file {commands.CONFIG_FILE} not found, create it in {os.getcwd()} [y/n]? "
+    )
     if resp.startswith("y"):
         do_init(None)
 

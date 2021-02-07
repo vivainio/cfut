@@ -38,15 +38,20 @@ def get_config():
     if current_config:
         return current_config
     if not os.path.isfile(CONFIG_FILE):
-        print(f"Config file '{CONFIG_FILE}' not found, please run 'cftool init' to create it")
+        print(
+            f"Config file '{CONFIG_FILE}' not found, please run 'cftool init' to create it"
+        )
         sys.exit(1)
 
     current_config = IniFile.parse_raw(open(CONFIG_FILE).read())
 
     return current_config
 
+
 def make_param_arg(d: Dict[str, str]):
-    return "--parameters " + " ".join(f"ParameterKey={k},ParameterValue={v}" for (k, v) in d.items())
+    return "--parameters " + " ".join(
+        f"ParameterKey={k},ParameterValue={v}" for (k, v) in d.items()
+    )
 
 
 def stack_args(stack_name: str, template_file: Optional[str]):
@@ -72,7 +77,7 @@ def run_command_with_file(stack_id: str, command_name: str):
     stack = inifile.templates[stack_id]
     cmd = base_command(command_name, stack.name, stack.path)
     if stack.capabilities:
-        caps = " --capabilities "+ " ".join(c.name for c in stack.capabilities)
+        caps = " --capabilities " + " ".join(c.name for c in stack.capabilities)
         cmd += caps
     if stack.parameters:
         ...
