@@ -97,6 +97,8 @@ def main():
     add_template_cmd("update", "update-stack")
     add_template_cmd("create", "create-stack")
     add_id_cmd("describe", "describe-stacks")
+    add_id_cmd("res", "describe-stack-resources")
+
     add_id_cmd("delete", "delete-stack")
 
     add_alias("ls", "describe-stacks")

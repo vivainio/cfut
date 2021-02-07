@@ -71,4 +71,7 @@ def run_command_with_file(stack_id: str, command_name: str):
     inifile = get_config()
     stack = inifile.templates[stack_id]
     cmd = base_command(command_name, stack.name, stack.path)
+    if stack.capabilities:
+        caps = " --capabilities "+ " ".join(c.name for c in stack.capabilities)
+        cmd += caps
     run_cf(cmd)
