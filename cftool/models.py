@@ -11,4 +11,3 @@ class CfnTemplate(BaseModel):
 class IniFile(BaseModel):
     profile: str
     templates: Dict[str, CfnTemplate]
-

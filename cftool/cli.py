@@ -1,5 +1,7 @@
 import os
 import sys
+from typing import Optional
+
 import argp
 
 from pathlib import Path
@@ -12,10 +14,17 @@ from cftool.models import IniFile, CfnTemplate
 def do_init(args):
     """ initialize cftool.json"""
 
-    assert not os.path.isfile(CONFIG_FILE)
     template_files = Path(".").glob("**/*.y*ml")
-    ini = IniFile(templates={
-        t.stem: CfnTemplate(name=t.stem, path=str(t).replace('\\', '/')) for t in template_files})
+    templates = {
+        t.stem: CfnTemplate(name=t.stem, path=str(t).replace('\\', '/')) for t in template_files
+    }
+
+    if len(templates) == 1:
+        templates = {"default": list(templates.values())[0]}
+
+    ini = IniFile(
+        profile="default",
+        templates=templates)
     cont = ini.json(indent=2)
     open(CONFIG_FILE, "w").write(cont)
 
@@ -39,21 +48,48 @@ def add_alias(fr: str, to: str):
 
 def add_id_cmd(fr: str, to: str):
     def id_cmd_handler(args):
-        commands.run_command(args.id, to)
+        idd = args.id if args.id else "default"
+
+        commands.run_command(idd, to)
 
     sp = argp.sub(fr, id_cmd_handler, help="Call: " + to)
-    sp.add_argument("id", help="Nickname of stack")
+    sp.add_argument("id", help="Nickname of stack", nargs="?")
 
 
 def add_template_cmd(fr: str, to: str):
     def template_cmd_handler(args):
-        commands.run_command_with_file(args.id, to)
+        idd = args.id if args.id else "default"
+        commands.run_command_with_file(idd, to)
 
     sp = argp.sub(fr, template_cmd_handler, help=f"Call with template: {to}")
-    sp.add_argument("id", help="Alias of stack")
+    sp.add_argument("id", help="Alias of stack", nargs="?")
+
+
+def find_in_parents(fname: str) -> Optional[Path]:
+    cur = Path(".").absolute()
+    while 1:
+        trie = cur / fname
+        print(trie)
+        if trie.exists():
+            return trie
+        parent = cur.parent
+        if parent == cur:
+            return None
+        cur = parent
+
+
+def change_to_root_dir():
+    found = find_in_parents(commands.CONFIG_FILE)
+    if found:
+        os.chdir(found.parent)
+        return
+    resp = input(f"Config file {commands.CONFIG_FILE} not found, create it in {os.getcwd()} [y/n]? ")
+    if resp.startswith("y"):
+        do_init(None)
 
 
 def main():
+    change_to_root_dir()
     argp.init()
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
