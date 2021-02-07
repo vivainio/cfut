@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 
 from pydantic import BaseModel
 
@@ -14,6 +14,8 @@ class CfnTemplate(BaseModel):
     name: str
     path: str
     capabilities: Optional[List[Capability]]
+    parameters: Optional[Dict[str, Any]]
+
 
 
 class IniFile(BaseModel):

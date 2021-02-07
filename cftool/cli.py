@@ -69,7 +69,6 @@ def find_in_parents(fname: str) -> Optional[Path]:
     cur = Path(".").absolute()
     while 1:
         trie = cur / fname
-        print(trie)
         if trie.exists():
             return trie
         parent = cur.parent

@@ -1,12 +1,9 @@
-import json
 import os
-import pprint
 import subprocess
 import sys
-from typing import Optional
+from typing import Optional, Dict
 
 from cftool.models import IniFile
-import yaml
 
 CONFIG_FILE = "cftool.json"
 
@@ -48,6 +45,9 @@ def get_config():
 
     return current_config
 
+def make_param_arg(d: Dict[str, str]):
+    return "--parameters " + " ".join(f"ParameterKey={k},ParameterValue={v}" for (k, v) in d.items())
+
 
 def stack_args(stack_name: str, template_file: Optional[str]):
     parts = [f"--stack-name {stack_name}"]
@@ -74,4 +74,7 @@ def run_command_with_file(stack_id: str, command_name: str):
     if stack.capabilities:
         caps = " --capabilities "+ " ".join(c.name for c in stack.capabilities)
         cmd += caps
+    if stack.parameters:
+        ...
+
     run_cf(cmd)
