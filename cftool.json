@@ -1,0 +1,13 @@
+{
+  "profile": "q",
+  "templates": {
+    "a_template": {
+      "name": "a_template",
+      "path": "test/a_template.yml"
+    },
+    "b_template": {
+      "name": "b_template",
+      "path": "test/b_template.yml"
+    }
+  }
+}
