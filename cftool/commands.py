@@ -5,7 +5,7 @@ from typing import Optional, Dict
 
 from cftool.models import IniFile
 
-CONFIG_FILE = "cftool.json"
+CONFIG_FILE = "cfutil.json"
 
 
 def run_cf(cmd: str):
