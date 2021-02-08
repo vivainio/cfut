@@ -87,9 +87,19 @@ def change_to_root_dir():
     if resp.startswith("y"):
         do_init(None)
 
+def print_stacks():
+    config = get_config()
+    for k,v in config.templates.items():
+        print(f"{k}: {v.path} => {v.name}")
+
 
 def main():
     change_to_root_dir()
+    if len(sys.argv) == 1:
+        print("Run cfut -h to get help.")
+        print("Workspace:", os.getcwd())
+        print_stacks()
+        return
     argp.init()
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")

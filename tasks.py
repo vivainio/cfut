@@ -4,6 +4,7 @@ import sys
 import subprocess, shutil
 import os
 import textwrap
+import shutil
 
 PACKAGE = "cfut"
 
@@ -25,6 +26,13 @@ def do_test(args):
 
 def default():
     show_help()
+
+
+def do_publish(args):
+    if os.path.isdir("dist"):
+        shutil.rmtree("dist")
+    c("py setup.py sdist")
+    c("twine upload dist/*")
 
 
 # library functions here (or in own module, whatever, I don't care)
