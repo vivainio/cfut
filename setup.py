@@ -6,8 +6,8 @@ setup(
     description="cfut is a wrapper cli for 'aws cloudformation'",
     author="Ville M. Vainio",
     author_email="ville.vainio@basware.com",
-    url="https://github.com/vivainio/cftool",
-    packages=["cftool"],
+    url="https://github.com/vivainio/cfut",
+    packages=["cfut"],
     install_requires=["argp", "pydantic"],
-    entry_points={"console_scripts": ["cfut = cftool.cli:main"]},
+    entry_points={"console_scripts": ["cfut = cfut.cli:main"]},
 )

@@ -5,17 +5,17 @@ import subprocess, shutil
 import os
 import textwrap
 
-PACKAGE = "cftool"
+PACKAGE = "cfut"
 
 
 def do_check(args):
     """ typecheck, lint etc goes here """
-    c("mypy cftool")
+    c("mypy cfut")
 
 
 def do_black(args):
     """ do 'black' reformat of all code """
-    c("py -m black cftool")
+    c("py -m black cfut")
 
 
 def do_test(args):

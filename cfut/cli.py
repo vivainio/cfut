@@ -6,13 +6,13 @@ import argp
 
 from pathlib import Path
 
-from cftool import commands
-from cftool.commands import CONFIG_FILE, get_config, run_cf
-from cftool.models import IniFile, CfnTemplate
+from cfut import commands
+from cfut.commands import CONFIG_FILE, get_config, run_cf
+from cfut.models import IniFile, CfnTemplate
 
 
 def do_init(args):
-    """ initialize cftool.json"""
+    """ initialize cfut.json"""
 
     template_files = Path(".").glob("**/*.y*ml")
     templates = {

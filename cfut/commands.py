@@ -3,9 +3,9 @@ import subprocess
 import sys
 from typing import Optional, Dict
 
-from cftool.models import IniFile
+from cfut.models import IniFile
 
-CONFIG_FILE = "cfutil.json"
+CONFIG_FILE = "cfut.json"
 
 
 def run_cf(cmd: str):
@@ -39,7 +39,7 @@ def get_config():
         return current_config
     if not os.path.isfile(CONFIG_FILE):
         print(
-            f"Config file '{CONFIG_FILE}' not found, please run 'cftool init' to create it"
+            f"Config file '{CONFIG_FILE}' not found, please run 'cfut init' to create it"
         )
         sys.exit(1)
 
