@@ -30,7 +30,7 @@ def set_profile_from_config():
     set_profile(config.profile)
 
 
-current_config: IniFile = None
+current_config: Optional[IniFile] = None
 
 
 def get_config():
