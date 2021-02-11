@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  ExampleParamA:
+    Type: String
+  ExampleParamB:
+    Type: String
+    Default: "b default"
+
+Resources:
+  Hello:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub
+        - SomeQueue-{name}
+        - name: !Ref ExampleParamA
+
+
+
+

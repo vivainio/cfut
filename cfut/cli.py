@@ -55,10 +55,10 @@ def add_id_cmd(fr: str, to: str):
     sp.add_argument("id", help="Nickname of stack", nargs="?")
 
 
-def add_template_cmd(fr: str, to: str):
+def add_template_cmd(fr: str, to: str, with_params=False):
     def template_cmd_handler(args):
         idd = args.id if args.id else "default"
-        commands.run_command_with_file(idd, to)
+        commands.run_command_with_file(idd, to, with_params)
 
     sp = argp.sub(fr, template_cmd_handler, help=f"Call with template: {to}")
     sp.add_argument("id", help="Alias of stack", nargs="?")
@@ -87,9 +87,10 @@ def change_to_root_dir():
     if resp.startswith("y"):
         do_init(None)
 
+
 def print_stacks():
     config = get_config()
-    for k,v in config.templates.items():
+    for k, v in config.templates.items():
         print(f"{k}: {v.path} => {v.name}")
 
 
@@ -104,8 +105,8 @@ def main():
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
 
-    add_template_cmd("update", "update-stack")
-    add_template_cmd("create", "create-stack")
+    add_template_cmd("update", "update-stack", True)
+    add_template_cmd("create", "create-stack", True)
     add_id_cmd("describe", "describe-stacks")
     add_id_cmd("res", "describe-stack-resources")
 

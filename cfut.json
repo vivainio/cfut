@@ -1,0 +1,20 @@
+{
+  "profile": "default",
+  "templates": {
+    "a": {
+      "name": "a-template",
+      "path": "./test/a_template.yml",
+      "capabilities": null,
+      "parameters": {
+        "ExampleParamA": "12",
+        "ExampleParamB": "13"
+      }
+    },
+    "b": {
+      "name": "b-template",
+      "path": "./test/b_template.yml",
+      "capabilities": null,
+      "parameters": {}
+    }
+  }
+}

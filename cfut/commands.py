@@ -49,9 +49,10 @@ def get_config():
 
 
 def make_param_arg(d: Dict[str, str]):
-    return "--parameters " + " ".join(
+    params = " ".join(
         f"ParameterKey={k},ParameterValue={v}" for (k, v) in d.items()
     )
+    return f'--parameters {params}'
 
 
 def stack_args(stack_name: str, template_file: Optional[str]):
@@ -72,14 +73,15 @@ def run_command(stack_id: str, command_name: str):
     run_cf(cmd)
 
 
-def run_command_with_file(stack_id: str, command_name: str):
+def run_command_with_file(stack_id: str, command_name: str, with_params: False):
     inifile = get_config()
     stack = inifile.templates[stack_id]
     cmd = base_command(command_name, stack.name, stack.path)
     if stack.capabilities:
         caps = " --capabilities " + " ".join(c.name for c in stack.capabilities)
         cmd += caps
-    if stack.parameters:
-        ...
+    if with_params and stack.parameters:
+        params = make_param_arg(stack.parameters)
+        cmd += " " + params
 
     run_cf(cmd)
