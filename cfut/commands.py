@@ -68,8 +68,10 @@ def base_command(command_name: str, stack_name: str, template_file: Optional[str
 
 def run_command(stack_id: str, command_name: str):
     inifile = get_config()
-    stack = inifile.templates[stack_id]
-    cmd = base_command(command_name, stack.name, None)
+    # if no alias exists, just pass it through
+    stack = inifile.templates.get(stack_id)
+    stack_name = stack.name if stack else stack_id
+    cmd = base_command(command_name, stack_name, None)
     run_cf(cmd)
 
 
