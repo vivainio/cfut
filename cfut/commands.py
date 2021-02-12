@@ -1,6 +1,8 @@
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, Dict
 
 from cfut.models import IniFile
@@ -8,10 +10,32 @@ from cfut.models import IniFile
 CONFIG_FILE = "cfut.json"
 
 
-def run_cf(cmd: str):
+class OutputStyle(str, Enum):
+    yaml = "yaml"
+    table = "table"
+
+
+@dataclass
+class OutputFormat:
+    style: OutputStyle
+    query: Optional[str]
+
+    def as_arg(self):
+        parts = ["--output", str(self.style)]
+        if self.query:
+            parts.extend(["--query", self.query])
+        return " ".join(parts)
+
+
+DEFAULT_OUTPUT_FORMAT = OutputFormat("yaml", None)
+
+
+def run_cf(cmd: str, output: Optional[OutputFormat] = None):
+    out = (output if output else DEFAULT_OUTPUT_FORMAT).as_arg()
+
     profile_arg = "--profile " + current_profile
 
-    cmd = f"aws cloudformation --output yaml {profile_arg} {cmd}"
+    cmd = f"aws cloudformation {out} {profile_arg} {cmd}"
     print("> " + cmd)
 
     subprocess.call(cmd)
@@ -66,13 +90,13 @@ def base_command(command_name: str, stack_name: str, template_file: Optional[str
     return f"{command_name} " + stack_args(stack_name, template_file)
 
 
-def run_command(stack_id: str, command_name: str):
+def run_command(stack_id: str, command_name: str, output: OutputFormat):
     inifile = get_config()
     # if no alias exists, just pass it through
     stack = inifile.templates.get(stack_id)
     stack_name = stack.name if stack else stack_id
     cmd = base_command(command_name, stack_name, None)
-    run_cf(cmd)
+    run_cf(cmd, output)
 
 
 def run_command_with_file(stack_id: str, command_name: str, with_params: False):

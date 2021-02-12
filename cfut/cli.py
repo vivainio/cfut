@@ -7,7 +7,7 @@ import argp
 from pathlib import Path
 
 from cfut import commands
-from cfut.commands import CONFIG_FILE, get_config, run_cf
+from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT
 from cfut.models import IniFile, CfnTemplate
 
 
@@ -34,22 +34,28 @@ def lint(args):
         os.system("cfn-lint " + t.path)
 
 
-def add_alias(fr: str, to: str):
+def add_alias(fr: str, to: str, output: Optional[OutputFormat] = None):
+    out = output if output else DEFAULT_OUTPUT_FORMAT
+
     def alias_handler(args):
         cmd = to
         if args.other_args:
             cmd += " " + " ".join(args.other_args)
-        run_cf(cmd)
+        run_cf(cmd, output)
 
     sp = argp.sub(fr, alias_handler, help="Alias: " + to)
     sp.add_argument("other_args", nargs="*")
 
 
-def add_id_cmd(fr: str, to: str):
+def add_id_cmd(fr: str, to: str, query: Optional[str] = None):
+    output = None
+    if query:
+        output = OutputFormat("table", query)
+
     def id_cmd_handler(args):
         idd = args.id if args.id else "default"
 
-        commands.run_command(idd, to)
+        commands.run_command(idd, to, output)
 
     sp = argp.sub(fr, id_cmd_handler, help="Call: " + to)
     sp.add_argument("id", help="Nickname of stack", nargs="?")
@@ -95,6 +101,7 @@ def print_stacks():
 
 
 def main():
+    os.environ["AWS_PAGER"] = "less"
     change_to_root_dir()
     if len(sys.argv) == 1:
         print("Run cfut -h to get help.")
@@ -108,11 +115,12 @@ def main():
     add_template_cmd("update", "update-stack", True)
     add_template_cmd("create", "create-stack", True)
     add_id_cmd("describe", "describe-stacks")
-    add_id_cmd("res", "describe-stack-resources")
-
+    add_id_cmd("events", "describe-stack-events", 'StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp]')
+    add_id_cmd("res", "describe-stack-resources",
+               'StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]')
     add_id_cmd("delete", "delete-stack")
 
-    add_alias("ls", "describe-stacks")
+    add_alias("ls", "describe-stacks", OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"))
     commands.set_profile_from_config()
     argp.parse()
 
