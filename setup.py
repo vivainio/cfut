@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="cfut",
-    version="1.2.1",
+    version="1.2.2",
     description="cfut is a wrapper cli for 'aws cloudformation'",
     author="Ville M. Vainio",
     author_email="ville.vainio@basware.com",
