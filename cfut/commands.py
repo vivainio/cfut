@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from enum import Enum
 from functools import lru_cache
 from typing import Optional, Dict, List
 
@@ -11,15 +10,9 @@ from cfut.models import IniFile
 
 CONFIG_FILE = "cfut.json"
 
-
-class OutputStyle(str, Enum):
-    yaml = "yaml"
-    table = "table"
-
-
 @dataclass
 class OutputFormat:
-    style: OutputStyle
+    style: str   # "yaml" | "table"
     query: Optional[str]
 
     def as_arg(self):
@@ -40,7 +33,6 @@ def run_cli_parsed_output(cmd: str):
     out = subprocess.run(full_cmd, capture_output=True, text=True).stdout
     parsed = json.loads(out)
     return parsed
-
 
 
 def run_cli(family: str, subcommand: str, output: Optional[OutputFormat] = None):
@@ -113,7 +105,7 @@ def run_command(stack_id: str, command_name: str, output: OutputFormat):
     run_cf(cmd, output)
 
 
-def run_command_with_file(stack_id: str, command_name: str, with_params: False):
+def run_command_with_file(stack_id: str, command_name: str, with_params: bool):
     inifile = get_config()
     stack = inifile.templates[stack_id]
     cmd = base_command(command_name, stack.name, stack.path)
@@ -137,8 +129,9 @@ def ccap(cmd: List[str]):
 def get_account():
     config = get_config()
     profile_name = config.profile
-    out = ccap(["aws", "sts", "get-caller-identity", "--profile", profile_name, "--query", "Account", "--output", "text"],
-               ).strip()
+    out = ccap(
+        ["aws", "sts", "get-caller-identity", "--profile", profile_name, "--query", "Account", "--output", "text"],
+    ).strip()
     return out
 
 

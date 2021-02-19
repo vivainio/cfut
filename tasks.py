@@ -11,7 +11,7 @@ PACKAGE = "cfut"
 
 def do_check(args):
     """ typecheck, lint etc goes here """
-    c("mypy cfut")
+    c("py -m mypy cfut")
 
 
 def do_black(args):

@@ -7,7 +7,7 @@ from typing import Optional
 import argp
 
 from cfut import commands
-from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT, run_cli, get_account, \
+from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT, get_account, \
     get_region, run_cli_parsed_output
 from cfut.models import IniFile, CfnTemplate
 
@@ -33,19 +33,6 @@ def lint(args):
     config = get_config()
     for t in config.templates.values():
         os.system("cfn-lint " + t.path)
-
-
-def add_any_alias(alias_name: str, family: str, subcommand: str, output: Optional[OutputFormat] = None):
-    out = output if output else DEFAULT_OUTPUT_FORMAT
-
-    def alias_handler(args):
-        cmd = subcommand
-        if args.other_args:
-            cmd += " " + " ".join(args.other_args)
-        run_cli(family, cmd, out)
-
-    sp = argp.sub(alias_name, alias_handler, help="Alias: " + to)
-    sp.add_argument("other_args", nargs="*")
 
 
 def add_cloudformation_alias(fr: str, to: str, output: Optional[OutputFormat] = None):
