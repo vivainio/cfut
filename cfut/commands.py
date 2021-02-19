@@ -1,10 +1,11 @@
+import json
 import os
 import subprocess
 import sys
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from cfut.models import IniFile
 
@@ -29,6 +30,17 @@ class OutputFormat:
 
 
 DEFAULT_OUTPUT_FORMAT = OutputFormat("yaml", None)
+
+
+def run_cli_parsed_output(cmd: str):
+    """ run command with right profile and json output, parse it """
+    command = ["aws", "--profile", current_profile, "--output", "json", cmd]
+    full_cmd = " ".join(command)
+    print("> " + full_cmd)
+    out = subprocess.run(full_cmd, capture_output=True, text=True).stdout
+    parsed = json.loads(out)
+    return parsed
+
 
 
 def run_cli(family: str, subcommand: str, output: Optional[OutputFormat] = None):
@@ -115,7 +127,7 @@ def run_command_with_file(stack_id: str, command_name: str, with_params: False):
     run_cf(cmd)
 
 
-def ccap(cmd: str):
+def ccap(cmd: List[str]):
     print(">", " ".join(cmd))
     out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
     return out

@@ -1,14 +1,14 @@
 import os
 import sys
+from operator import itemgetter
+from pathlib import Path
 from typing import Optional
 
 import argp
 
-from pathlib import Path
-
 from cfut import commands
 from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT, run_cli, get_account, \
-    get_region
+    get_region, run_cli_parsed_output
 from cfut.models import IniFile, CfnTemplate
 
 
@@ -119,23 +119,53 @@ def c(s):
     os.system(s)
 
 
-def do_ecr_push(args):
-    """ push docker image to ecr"""
-    config = get_config()
-    acc = get_account()
-    repo_name = config.ecr.repo
-    tag = config.ecr.tag
+def get_ecr_address():
     region = get_region()
-    src_dir = config.ecr.src
-    ecr_address = f"{acc}.dkr.ecr.{region}.amazonaws.com"
-    remote_tag = f"{ecr_address}/{repo_name}:{tag}"
+    acc = get_account()
+    return f"{acc}.dkr.ecr.{region}.amazonaws.com"
 
-    c(f"docker build -t {remote_tag} {src_dir}")
+
+def ecr_login():
+    config = get_config()
+    ecr_address = get_ecr_address()
 
     c(
         f'aws ecr --profile {config.profile} get-login-password | docker login  --password-stdin --username AWS  "{ecr_address}"')
 
+
+def do_ecr_push(args):
+    """ push docker image to ecr"""
+    config = get_config()
+    repo_name = config.ecr.repo
+    tag = config.ecr.tag
+    src_dir = config.ecr.src
+    ecr_address = get_ecr_address()
+    remote_tag = f"{ecr_address}/{repo_name}:{tag}"
+    c(f"docker build -t {remote_tag} {src_dir}")
+
+    ecr_login()
     c(f"docker push {remote_tag}")
+
+
+def do_ecr_ls(args):
+    config = get_config()
+    ecr_login()
+    repo_name = config.ecr.repo
+    parsed = run_cli_parsed_output(f"ecr describe-images --repository-name {repo_name}")
+    lines = parsed["imageDetails"]
+    lines.sort(key=itemgetter("imagePushedAt"))
+    table = [
+        [
+            line["imagePushedAt"],
+            "%d MB" % (int(line["imageSizeInBytes"]) / (1024 * 1024)),
+            line["imageDigest"].split(":")[1],
+            ",".join(line.get("imageTags", []))
+        ]
+        for line in lines
+    ]
+
+    for line in table:
+        print("\t".join(line))
 
 
 def main():
@@ -163,6 +193,7 @@ def main():
                              OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"))
 
     argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
+    argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
 
     commands.set_profile_from_config()
     argp.parse()
