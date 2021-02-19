@@ -7,7 +7,8 @@ import argp
 from pathlib import Path
 
 from cfut import commands
-from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT
+from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT, run_cli, get_account, \
+    get_region
 from cfut.models import IniFile, CfnTemplate
 
 
@@ -34,14 +35,27 @@ def lint(args):
         os.system("cfn-lint " + t.path)
 
 
-def add_alias(fr: str, to: str, output: Optional[OutputFormat] = None):
+def add_any_alias(alias_name: str, family: str, subcommand: str, output: Optional[OutputFormat] = None):
+    out = output if output else DEFAULT_OUTPUT_FORMAT
+
+    def alias_handler(args):
+        cmd = subcommand
+        if args.other_args:
+            cmd += " " + " ".join(args.other_args)
+        run_cli(family, cmd, out)
+
+    sp = argp.sub(alias_name, alias_handler, help="Alias: " + to)
+    sp.add_argument("other_args", nargs="*")
+
+
+def add_cloudformation_alias(fr: str, to: str, output: Optional[OutputFormat] = None):
     out = output if output else DEFAULT_OUTPUT_FORMAT
 
     def alias_handler(args):
         cmd = to
         if args.other_args:
             cmd += " " + " ".join(args.other_args)
-        run_cf(cmd, output)
+        run_cf(cmd, out)
 
     sp = argp.sub(fr, alias_handler, help="Alias: " + to)
     sp.add_argument("other_args", nargs="*")
@@ -100,6 +114,30 @@ def print_stacks():
         print(f"{k}: {v.path} => {v.name}")
 
 
+def c(s):
+    print(">", s)
+    os.system(s)
+
+
+def do_ecr_push(args):
+    """ push docker image to ecr"""
+    config = get_config()
+    acc = get_account()
+    repo_name = config.ecr.repo
+    tag = config.ecr.tag
+    region = get_region()
+    src_dir = config.ecr.src
+    ecr_address = f"{acc}.dkr.ecr.{region}.amazonaws.com"
+    remote_tag = f"{ecr_address}/{repo_name}:{tag}"
+
+    c(f"docker build -t {remote_tag} {src_dir}")
+
+    c(
+        f'aws ecr --profile {config.profile} get-login-password | docker login  --password-stdin --username AWS  "{ecr_address}"')
+
+    c(f"docker push {remote_tag}")
+
+
 def main():
     os.environ["AWS_PAGER"] = "less"
     change_to_root_dir()
@@ -115,12 +153,17 @@ def main():
     add_template_cmd("update", "update-stack", True)
     add_template_cmd("create", "create-stack", True)
     add_id_cmd("describe", "describe-stacks")
-    add_id_cmd("events", "describe-stack-events", 'StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp]')
+    add_id_cmd("events", "describe-stack-events",
+               'StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]')
     add_id_cmd("res", "describe-stack-resources",
                'StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]')
     add_id_cmd("delete", "delete-stack")
 
-    add_alias("ls", "describe-stacks", OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"))
+    add_cloudformation_alias("ls", "describe-stacks",
+                             OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"))
+
+    argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
+
     commands.set_profile_from_config()
     argp.parse()
 

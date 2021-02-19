@@ -17,6 +17,13 @@ class CfnTemplate(BaseModel):
     parameters: Optional[Dict[str, Any]]
 
 
+class EcrConfig(BaseModel):
+    repo: str
+    tag = "dev"
+    src = "."   # path to the directory with Dockerfile, e.g. "."
+
+
 class IniFile(BaseModel):
+    ecr: Optional[EcrConfig]
     profile: str
     templates: Dict[str, CfnTemplate]

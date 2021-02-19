@@ -1,9 +1,14 @@
 {
   "profile": "default",
+  "ecr": {
+    "repo": "test-ecr-repo",
+    "tag": "dev",
+    "src": "tests/docker_test"
+  },
   "templates": {
     "a": {
       "name": "a-template",
-      "path": "./test/a_template.yml",
+      "path": "./tests/a_template.yml",
       "capabilities": null,
       "parameters": {
         "ExampleParamA": "12",
@@ -12,7 +17,7 @@
     },
     "b": {
       "name": "b-template",
-      "path": "./test/b_template.yml",
+      "path": "./tests/b_template.yml",
       "capabilities": null,
       "parameters": {}
     }

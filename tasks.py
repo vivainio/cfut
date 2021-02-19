@@ -20,7 +20,7 @@ def do_black(args):
 
 
 def do_test(args):
-    os.chdir("test")
+    os.chdir("tests")
     c("pytest")
 
 

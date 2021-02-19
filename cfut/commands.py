@@ -3,6 +3,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from typing import Optional, Dict
 
 from cfut.models import IniFile
@@ -30,15 +31,16 @@ class OutputFormat:
 DEFAULT_OUTPUT_FORMAT = OutputFormat("yaml", None)
 
 
-def run_cf(cmd: str, output: Optional[OutputFormat] = None):
+def run_cli(family: str, subcommand: str, output: Optional[OutputFormat] = None):
     out = (output if output else DEFAULT_OUTPUT_FORMAT).as_arg()
-
     profile_arg = "--profile " + current_profile
-
-    cmd = f"aws cloudformation {out} {profile_arg} {cmd}"
+    cmd = f"aws {family} {out} {profile_arg} {subcommand}"
     print("> " + cmd)
-
     subprocess.call(cmd)
+
+
+def run_cf(cmd: str, output: Optional[OutputFormat] = None):
+    run_cli("cloudformation", cmd, output)
 
 
 current_profile = "default"
@@ -111,3 +113,25 @@ def run_command_with_file(stack_id: str, command_name: str, with_params: False):
         cmd += " " + params
 
     run_cf(cmd)
+
+
+def ccap(cmd: str):
+    print(">", " ".join(cmd))
+    out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
+    return out
+
+
+@lru_cache()
+def get_account():
+    config = get_config()
+    profile_name = config.profile
+    out = ccap(["aws", "sts", "get-caller-identity", "--profile", profile_name, "--query", "Account", "--output", "text"],
+               ).strip()
+    return out
+
+
+@lru_cache()
+def get_region() -> object:
+    config = get_config()
+    ret = ccap(["aws", "configure", "--profile", config.profile, "get", "region"]).strip()
+    return ret

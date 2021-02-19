@@ -8,13 +8,7 @@ Parameters:
     Default: "b default"
 
 Resources:
-  Hello:
-    Type: AWS::SQS::Queue
+  EcrRepo:
+    Type: AWS::ECR::Repository
     Properties:
-      QueueName: !Sub
-        - SomeQueue-{name}
-        - name: !Ref ExampleParamA
-
-
-
-
+      RepositoryName: test-ecr-repo
