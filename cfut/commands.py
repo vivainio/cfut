@@ -47,7 +47,7 @@ def run_cli(family: str, subcommand: str, output: Optional[OutputFormat] = None)
     profile_arg = " ".join(get_profile_arg())
     cmd = f"aws {family} {out} {profile_arg} {subcommand}"
     print("> " + cmd)
-    subprocess.call(cmd)
+    subprocess.call(cmd, shell=True)
 
 
 def run_cf(cmd: str, output: Optional[OutputFormat] = None):
