@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional, Dict, List
 
-from cfut.models import IniFile
+from cfut.models import IniFile, get_env
 
 CONFIG_FILE = "cfut.json"
 
@@ -144,6 +144,10 @@ def get_account():
 
 @lru_cache()
 def get_region() -> object:
-    config = get_config()
+    env = get_env()
+    # aws_default_region overrides "profile"
+    if env.aws_default_region:
+        return env.aws_default_region
+
     ret = ccap(["aws", "configure"] + get_profile_arg() + ["get", "region"]).strip()
     return ret

@@ -116,8 +116,8 @@ def ecr_login():
     config = get_config()
     ecr_address = get_ecr_address()
 
-    c(
-        f'aws ecr --profile {config.profile} get-login-password | docker login  --password-stdin --username AWS  "{ecr_address}"')
+    profile_arg = " ".join(commands.get_profile_arg()).strip()
+    c(f'aws ecr {profile_arg} get-login-password | docker login --password-stdin --username AWS "{ecr_address}"')
 
 
 def do_ecr_push(args):
