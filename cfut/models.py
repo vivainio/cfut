@@ -25,5 +25,5 @@ class EcrConfig(BaseModel):
 
 class IniFile(BaseModel):
     ecr: Optional[EcrConfig]
-    profile: str
+    profile: Optional[str]
     templates: Dict[str, CfnTemplate]

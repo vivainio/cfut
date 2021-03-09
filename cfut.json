@@ -1,5 +1,5 @@
 {
-  "profile": "default",
+  "profile": null,
   "ecr": {
     "repo": "test-ecr-repo",
     "tag": "dev",

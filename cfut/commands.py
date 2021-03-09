@@ -10,9 +10,10 @@ from cfut.models import IniFile
 
 CONFIG_FILE = "cfut.json"
 
+
 @dataclass
 class OutputFormat:
-    style: str   # "yaml" | "table"
+    style: str  # "yaml" | "table"
     query: Optional[str]
 
     def as_arg(self):
@@ -25,9 +26,15 @@ class OutputFormat:
 DEFAULT_OUTPUT_FORMAT = OutputFormat("yaml", None)
 
 
+def get_profile_arg():
+    if current_profile:
+        return ["--profile", current_profile]
+    return []
+
+
 def run_cli_parsed_output(cmd: str):
     """ run command with right profile and json output, parse it """
-    command = ["aws", "--profile", current_profile, "--output", "json", cmd]
+    command = ["aws"] + get_profile_arg() + ["--output", "json", cmd]
     full_cmd = " ".join(command)
     print("> " + full_cmd)
     out = subprocess.run(full_cmd, capture_output=True, text=True).stdout
@@ -37,7 +44,7 @@ def run_cli_parsed_output(cmd: str):
 
 def run_cli(family: str, subcommand: str, output: Optional[OutputFormat] = None):
     out = (output if output else DEFAULT_OUTPUT_FORMAT).as_arg()
-    profile_arg = "--profile " + current_profile
+    profile_arg = " ".join(get_profile_arg())
     cmd = f"aws {family} {out} {profile_arg} {subcommand}"
     print("> " + cmd)
     subprocess.call(cmd)
@@ -130,7 +137,7 @@ def get_account():
     config = get_config()
     profile_name = config.profile
     out = ccap(
-        ["aws", "sts", "get-caller-identity", "--profile", profile_name, "--query", "Account", "--output", "text"],
+        ["aws", "sts", "get-caller-identity"] + get_profile_arg() + ["--query", "Account", "--output", "text"],
     ).strip()
     return out
 
@@ -138,5 +145,5 @@ def get_account():
 @lru_cache()
 def get_region() -> object:
     config = get_config()
-    ret = ccap(["aws", "configure", "--profile", config.profile, "get", "region"]).strip()
+    ret = ccap(["aws", "configure"] + get_profile_arg() + ["get", "region"]).strip()
     return ret
