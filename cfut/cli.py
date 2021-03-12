@@ -1,9 +1,10 @@
 import os
 import sys
+import argparse
+
 from operator import itemgetter
 from pathlib import Path
 from typing import Optional
-
 import argp
 
 from cfut import commands
@@ -103,7 +104,9 @@ def print_stacks():
 
 def c(s):
     print(">", s)
-    os.system(s)
+    ret = os.system(s)
+    if ret:
+        raise Exception("ERROR! Command failed: " + s)
 
 
 def get_ecr_address():
@@ -137,7 +140,9 @@ def do_ecr_push(args):
     c(f"docker build -t {rev_tag} -t {config_tag} -t {latest_tag} {src_dir}")
 
     ecr_login()
-    c(f"docker push {remote_tag}")
+    # agh, old docker client wants you to push every tag separately
+    for t in [remote_tag, rev_tag, latest_tag]:
+        c(f"docker push {t}")
 
 
 def do_ecr_ls(args):
@@ -169,7 +174,9 @@ def main():
         print("Workspace:", os.getcwd())
         print_stacks()
         return
-    argp.init()
+    parser = argparse.ArgumentParser()
+    argp.init(parser)
+    parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
 
@@ -188,8 +195,10 @@ def main():
     argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
     argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
 
-    commands.set_profile_from_config()
-    argp.parse()
+    parsed = parser.parse_args(sys.argv[1:])
+    commands.set_profile_from_config_or_parser(parsed)
+
+    argp.dispatch_parsed(parsed)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import subprocess
@@ -62,7 +63,12 @@ def set_profile(profile: str):
     current_profile = profile
 
 
-def set_profile_from_config():
+def set_profile_from_config_or_parser(parser: argparse.Namespace):
+    from_cmd = parser.profile
+    if from_cmd:
+        set_profile(from_cmd)
+        return
+
     config = get_config()
     set_profile(config.profile)
 
@@ -134,8 +140,7 @@ def ccap(cmd: List[str]):
 
 @lru_cache()
 def get_account():
-    config = get_config()
-    profile_name = config.profile
+    get_config()
     out = ccap(
         ["aws", "sts", "get-caller-identity"] + get_profile_arg() + ["--query", "Account", "--output", "text"],
     ).strip()
