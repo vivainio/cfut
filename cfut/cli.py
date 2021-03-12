@@ -127,8 +127,14 @@ def do_ecr_push(args):
     tag = config.ecr.tag
     src_dir = config.ecr.src
     ecr_address = get_ecr_address()
-    remote_tag = f"{ecr_address}/{repo_name}:{tag}"
-    c(f"docker build -t {remote_tag} {src_dir}")
+    image_name = f"{ecr_address}/{repo_name}"
+    rev = os.popen("git rev-parse HEAD").read().strip()[:8]
+
+    rev_tag = f"{image_name}:{rev}"
+    config_tag = f"{image_name}:{tag}"
+    latest_tag = f"{image_name}:latest"
+    remote_tag = f"{image_name}:{tag}"
+    c(f"docker build -t {rev_tag} -t {config_tag} -t {latest_tag} {src_dir}")
 
     ecr_login()
     c(f"docker push {remote_tag}")
