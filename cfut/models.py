@@ -2,7 +2,7 @@ from enum import Enum
 from functools import lru_cache
 from typing import Dict, Optional, List, Any
 
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel, BaseSettings, Field
 
 
 class Capability(str, Enum):
@@ -19,11 +19,11 @@ class CfnTemplate(BaseModel):
 
 
 class EcrConfig(BaseModel):
-    account: Optional[str]   # you can specify account if your ecr repo is in another account
-    region: Optional[str]    # ditto
-    repo: str
-    tag = "dev"
-    src = "."  # path to the directory with Dockerfile, e.g. "."
+    account: Optional[str] = Field(description="AWS account in which ECR repo is (may be different than current account)")   # you can specify account if your ecr repo is in another account
+    region: Optional[str] = Field(description="AWS region for the ECR repo")   # ditto
+    repo: str = Field(description="ECR repository name, e.g. my-repo. Not the full URL!")
+    tag: str = Field("dev", description="Tag to add in addition to git sha and 'latest'")
+    src: str = Field(".", description="Directory where Dockerfile is")
 
 
 class IniFile(BaseModel):

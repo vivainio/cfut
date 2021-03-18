@@ -20,12 +20,19 @@ assign_overrider_args(model, parsed)
 """
 
 import argparse
+import operator
+import pprint
 
 
 def add_overrider_args(parser: argparse.ArgumentParser, model_class):
-    fields = model_class.__fields__.keys()
-    for field in fields:
-        parser.add_argument("--" + field)
+    fields = model_class.__fields__
+    pprint.pprint(fields)
+    for name, fieldinfo in fields.items():
+        try:
+            help_text = fieldinfo.field_info.description
+        except AttributeError:
+            help_text = None
+        parser.add_argument("--" + name, help = help_text)
 
 
 def assign_overrider_args(obj, ns: argparse.Namespace):
