@@ -148,7 +148,7 @@ def get_account():
 
 
 @lru_cache()
-def get_region() -> object:
+def get_region() -> str:
     env = get_env()
     # aws_default_region overrides "profile"
     if env.aws_default_region:

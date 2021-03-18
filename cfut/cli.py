@@ -126,21 +126,22 @@ def get_ecr_address():
 
 
 def ecr_login():
-    config = get_config()
+    get_config()
     ecr_address = get_ecr_address()
-
+    region = get_region()
     profile_arg = " ".join(commands.get_profile_arg()).strip()
     c(
-        f'aws ecr {profile_arg} get-login-password | docker login --password-stdin --username AWS "{ecr_address}"'
+        f'aws ecr {profile_arg} get-login-password --region {region} | docker login --password-stdin --username AWS "{ecr_address}"'
     )
 
 
 def do_ecr_push(args):
     """ push docker image to ecr"""
     config = get_config()
+    ecr_login()
+
     ecr = config.ecr.copy()
     assign_overrider_args(ecr, args)
-
     repo_name = ecr.repo
     tag = ecr.tag
     src_dir = ecr.src
