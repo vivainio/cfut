@@ -9,8 +9,16 @@ import argp
 from pydantic import BaseModel
 
 from cfut import commands
-from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT, get_account, \
-    get_region, run_cli_parsed_output
+from cfut.commands import (
+    CONFIG_FILE,
+    get_config,
+    run_cf,
+    OutputFormat,
+    DEFAULT_OUTPUT_FORMAT,
+    get_account,
+    get_region,
+    run_cli_parsed_output,
+)
 from cfut.models import IniFile, CfnTemplate, EcrConfig
 from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args
 
@@ -122,7 +130,9 @@ def ecr_login():
     ecr_address = get_ecr_address()
 
     profile_arg = " ".join(commands.get_profile_arg()).strip()
-    c(f'aws ecr {profile_arg} get-login-password | docker login --password-stdin --username AWS "{ecr_address}"')
+    c(
+        f'aws ecr {profile_arg} get-login-password | docker login --password-stdin --username AWS "{ecr_address}"'
+    )
 
 
 def do_ecr_push(args):
@@ -135,7 +145,7 @@ def do_ecr_push(args):
     tag = ecr.tag
     src_dir = ecr.src
     print(ecr)
-    1/0
+    1 / 0
     ecr_address = get_ecr_address()
     image_name = f"{ecr_address}/{repo_name}"
     rev = os.popen("git rev-parse HEAD").read().strip()[:8]
@@ -166,7 +176,7 @@ def do_ecr_ls(args):
             line["imagePushedAt"],
             "%d MB" % (int(line["imageSizeInBytes"]) / (1024 * 1024)),
             line["imageDigest"].split(":")[1],
-            ",".join(line.get("imageTags", []))
+            ",".join(line.get("imageTags", [])),
         ]
         for line in lines
     ]
@@ -192,14 +202,23 @@ def main():
     add_template_cmd("update", "update-stack", True)
     add_template_cmd("create", "create-stack", True)
     add_id_cmd("describe", "describe-stacks")
-    add_id_cmd("events", "describe-stack-events",
-               'StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]')
-    add_id_cmd("res", "describe-stack-resources",
-               'StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]')
+    add_id_cmd(
+        "events",
+        "describe-stack-events",
+        "StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]",
+    )
+    add_id_cmd(
+        "res",
+        "describe-stack-resources",
+        "StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]",
+    )
     add_id_cmd("delete", "delete-stack")
 
-    add_cloudformation_alias("ls", "describe-stacks",
-                             OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"))
+    add_cloudformation_alias(
+        "ls",
+        "describe-stacks",
+        OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"),
+    )
 
     push = argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
     add_overrider_args(push, EcrConfig)

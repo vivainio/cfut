@@ -92,10 +92,8 @@ def get_config():
 
 
 def make_param_arg(d: Dict[str, str]):
-    params = " ".join(
-        f"ParameterKey={k},ParameterValue={v}" for (k, v) in d.items()
-    )
-    return f'--parameters {params}'
+    params = " ".join(f"ParameterKey={k},ParameterValue={v}" for (k, v) in d.items())
+    return f"--parameters {params}"
 
 
 def stack_args(stack_name: str, template_file: Optional[str]):
@@ -142,7 +140,9 @@ def ccap(cmd: List[str]):
 def get_account():
     get_config()
     out = ccap(
-        ["aws", "sts", "get-caller-identity"] + get_profile_arg() + ["--query", "Account", "--output", "text"],
+        ["aws", "sts", "get-caller-identity"]
+        + get_profile_arg()
+        + ["--query", "Account", "--output", "text"],
     ).strip()
     return out
 
