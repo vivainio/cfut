@@ -26,7 +26,6 @@ import pprint
 
 def add_overrider_args(parser: argparse.ArgumentParser, model_class):
     fields = model_class.__fields__
-    pprint.pprint(fields)
     for name, fieldinfo in fields.items():
         try:
             help_text = fieldinfo.field_info.description
