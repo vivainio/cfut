@@ -183,6 +183,11 @@ def do_ecr_ls(args):
         print("\t".join(line))
 
 
+def do_ecr_login(args):
+    get_config()
+    ecr_login()
+
+
 def main():
     os.environ["AWS_PAGER"] = "less"
     change_to_root_dir()
@@ -222,7 +227,7 @@ def main():
     add_overrider_args(push, EcrConfig)
 
     argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
-
+    argp.sub("ecrlogin", do_ecr_login, help="Do docker login to ecr")
     parsed = parser.parse_args(sys.argv[1:])
     commands.set_profile_from_config_or_parser(parsed)
 
