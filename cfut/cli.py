@@ -6,11 +6,13 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Optional
 import argp
+from pydantic import BaseModel
 
 from cfut import commands
 from cfut.commands import CONFIG_FILE, get_config, run_cf, OutputFormat, DEFAULT_OUTPUT_FORMAT, get_account, \
     get_region, run_cli_parsed_output
-from cfut.models import IniFile, CfnTemplate
+from cfut.models import IniFile, CfnTemplate, EcrConfig
+from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args
 
 
 def do_init(args):
@@ -126,9 +128,14 @@ def ecr_login():
 def do_ecr_push(args):
     """ push docker image to ecr"""
     config = get_config()
-    repo_name = config.ecr.repo
-    tag = config.ecr.tag
-    src_dir = config.ecr.src
+    ecr = config.ecr.copy()
+    assign_overrider_args(ecr, args)
+
+    repo_name = ecr.repo
+    tag = ecr.tag
+    src_dir = ecr.src
+    print(ecr)
+    1/0
     ecr_address = get_ecr_address()
     image_name = f"{ecr_address}/{repo_name}"
     rev = os.popen("git rev-parse HEAD").read().strip()[:8]
@@ -194,7 +201,9 @@ def main():
     add_cloudformation_alias("ls", "describe-stacks",
                              OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"))
 
-    argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
+    push = argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
+    add_overrider_args(push, EcrConfig)
+
     argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
 
     parsed = parser.parse_args(sys.argv[1:])
