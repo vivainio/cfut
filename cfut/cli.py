@@ -144,8 +144,6 @@ def do_ecr_push(args):
     repo_name = ecr.repo
     tag = ecr.tag
     src_dir = ecr.src
-    print(ecr)
-    1 / 0
     ecr_address = get_ecr_address()
     image_name = f"{ecr_address}/{repo_name}"
     rev = os.popen("git rev-parse HEAD").read().strip()[:8]
