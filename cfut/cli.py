@@ -133,15 +133,17 @@ def do_ecr_push(args):
     image_name = f"{ecr_address}/{repo_name}"
     rev = os.popen("git rev-parse HEAD").read().strip()[:8]
 
-    rev_tag = f"{image_name}:{rev}"
+    rev_tag = f"{image_name}:{rev}" if rev else None
     config_tag = f"{image_name}:{tag}"
     latest_tag = f"{image_name}:latest"
-    remote_tag = f"{image_name}:{tag}"
-    c(f"docker build -t {rev_tag} -t {config_tag} -t {latest_tag} {src_dir}")
+
+    tags = [t for t in [rev_tag, config_tag, latest_tag] if t]
+    tag_args = [f"-t " + tag for tag in tags]
+    c(f"docker build " + " ".join(tag_args) + " " + src_dir)
 
     ecr_login()
     # agh, old docker client wants you to push every tag separately
-    for t in [remote_tag, rev_tag, latest_tag]:
+    for t in tags:
         c(f"docker push {t}")
 
 
