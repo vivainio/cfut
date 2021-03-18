@@ -4,9 +4,8 @@ import argparse
 
 from operator import itemgetter
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 import argp
-from pydantic import BaseModel
 
 from cfut import commands
 from cfut.commands import (
@@ -119,16 +118,22 @@ def c(s):
         raise Exception("ERROR! Command failed: " + s)
 
 
-def get_ecr_address():
-    region = get_region()
-    acc = get_account()
-    return f"{acc}.dkr.ecr.{region}.amazonaws.com"
+def get_ecr_address(ecr: EcrConfig) -> Tuple[str, str]:
+    """ address, region """
+    region = ecr.region or get_region()
+    acc = ecr.account or get_account()
+    return f"{acc}.dkr.ecr.{region}.amazonaws.com", region
 
 
-def ecr_login():
-    get_config()
-    ecr_address = get_ecr_address()
-    region = get_region()
+def get_ecr_config_for_command(parsed: argparse.Namespace):
+    config = get_config()
+    ecr = config.ecr.copy()
+    assign_overrider_args(ecr, parsed)
+    return ecr
+
+
+def ecr_login(ecr: EcrConfig):
+    ecr_address, region = get_ecr_address(ecr)
     profile_arg = " ".join(commands.get_profile_arg()).strip()
     c(
         f'aws ecr {profile_arg} get-login-password --region {region} | docker login --password-stdin --username AWS "{ecr_address}"'
@@ -137,11 +142,9 @@ def ecr_login():
 
 def do_ecr_push(args):
     """ push docker image to ecr"""
-    config = get_config()
-    ecr_login()
+    ecr = get_ecr_config_for_command(args)
+    ecr_login(ecr)
 
-    ecr = config.ecr.copy()
-    assign_overrider_args(ecr, args)
     repo_name = ecr.repo
     tag = ecr.tag
     src_dir = ecr.src
@@ -164,9 +167,9 @@ def do_ecr_push(args):
 
 
 def do_ecr_ls(args):
-    config = get_config()
-    ecr_login()
-    repo_name = config.ecr.repo
+    ecr = get_ecr_config_for_command(args)
+    ecr_login(ecr)
+    repo_name = ecr.repo
     parsed = run_cli_parsed_output(f"ecr describe-images --repository-name {repo_name}")
     lines = parsed["imageDetails"]
     lines.sort(key=itemgetter("imagePushedAt"))
@@ -185,8 +188,9 @@ def do_ecr_ls(args):
 
 
 def do_ecr_login(args):
+    ecr = get_ecr_config_for_command(args)
     get_config()
-    ecr_login()
+    ecr_login(ecr)
 
 
 def main():
@@ -225,10 +229,12 @@ def main():
     )
 
     push = argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
+    ecrls = argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
+    ecrlogin = argp.sub("ecrlogin", do_ecr_login, help="Do docker login to ecr")
     add_overrider_args(push, EcrConfig)
+    add_overrider_args(ecrls, EcrConfig)
+    add_overrider_args(ecrlogin, EcrConfig)
 
-    argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
-    argp.sub("ecrlogin", do_ecr_login, help="Do docker login to ecr")
     parsed = parser.parse_args(sys.argv[1:])
     commands.set_profile_from_config_or_parser(parsed)
 

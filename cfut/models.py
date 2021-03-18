@@ -19,6 +19,8 @@ class CfnTemplate(BaseModel):
 
 
 class EcrConfig(BaseModel):
+    account: Optional[str]   # you can specify account if your ecr repo is in another account
+    region: Optional[str]    # ditto
     repo: str
     tag = "dev"
     src = "."  # path to the directory with Dockerfile, e.g. "."
