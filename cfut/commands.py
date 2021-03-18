@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional, Dict, List
 
-from cfut.models import IniFile, get_env
+from cfut.models import IniFile, get_env, CfnTemplate
 
 CONFIG_FILE = "cfut.json"
 
@@ -116,18 +116,27 @@ def run_command(stack_id: str, command_name: str, output: OutputFormat):
     run_cf(cmd, output)
 
 
-def run_command_with_file(stack_id: str, command_name: str, with_params: bool):
-    inifile = get_config()
-    stack = inifile.templates[stack_id]
+def run_stack(command_name: str, stack: CfnTemplate):
     cmd = base_command(command_name, stack.name, stack.path)
     if stack.capabilities:
         caps = " --capabilities " + " ".join(c.name for c in stack.capabilities)
         cmd += caps
-    if with_params and stack.parameters:
+    if stack.parameters:
         params = make_param_arg(stack.parameters)
         cmd += " " + params
 
     run_cf(cmd)
+
+
+def lookup_stack(stack_id: str) -> CfnTemplate:
+    inifile = get_config()
+    stack = inifile.templates[stack_id]
+    return stack
+
+
+def run_command_with_file(stack_id: str, command_name: str):
+    stack = lookup_stack(stack_id)
+    run_stack(command_name, stack)
 
 
 def ccap(cmd: List[str]):

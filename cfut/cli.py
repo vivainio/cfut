@@ -72,13 +72,27 @@ def add_id_cmd(fr: str, to: str, query: Optional[str] = None):
     sp.add_argument("id", help="Nickname of stack", nargs="?")
 
 
-def add_template_cmd(fr: str, to: str, with_params=False):
+def add_template_cmd(fr: str, to: str):
     def template_cmd_handler(args):
         idd = args.id if args.id else "default"
-        commands.run_command_with_file(idd, to, with_params)
+        stack = commands.lookup_stack(idd)
+        params = [param.split("=",1) for param in args.params]
+        as_dict = {
+            k: v for (k,v) in params
+        }
+        if not stack.parameters:
+            stack.parameters = {}
+        stack.parameters.update(as_dict)
+        if args.name:
+            stack.name = args.name
+        print(stack)
+
+        commands.run_stack(to, stack)
 
     sp = argp.sub(fr, template_cmd_handler, help=f"Call with template: {to}")
     sp.add_argument("id", help="Alias of stack", nargs="?")
+    sp.add_argument("--params", nargs="+", help="Params as key1=value1 key2=value2")
+    sp.add_argument("--name", type=str, help="Override name of the stack")
 
 
 def find_in_parents(fname: str) -> Optional[Path]:
@@ -206,8 +220,8 @@ def main():
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
 
-    add_template_cmd("update", "update-stack", True)
-    add_template_cmd("create", "create-stack", True)
+    add_template_cmd("update", "update-stack")
+    add_template_cmd("create", "create-stack")
     add_id_cmd("describe", "describe-stacks")
     add_id_cmd(
         "events",
