@@ -28,9 +28,14 @@ def create_init_file(args):
     if os.path.isfile(CONFIG_FILE):
         print("Config already exist! Delete cfut.json if you want to run 'init' again")
         return
-    template_files = itertools.chain(
+
+    def is_template(fname):
+        return "AWSTemplateFormatVersion" in open(fname).read()
+
+    template_files = [fname for fname in itertools.chain(
         Path(".").glob("**/*.y*ml"),
-        Path(".").glob("**/*.json"))
+        Path(".").glob("**/*.json")) if is_template(fname)]
+
     templates = {
         t.stem: CfnTemplate(name=t.stem, path=str(t).replace("\\", "/"))
         for t in template_files
@@ -221,7 +226,8 @@ def main():
     parser = argparse.ArgumentParser()
     argp.init(parser)
     parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
-    parser.add_argument("-d", "--define", type=str, action="append", help="Override configuration, e.g. -d ecr.repo=my-repo")
+    parser.add_argument("-d", "--define", type=str, action="append",
+                        help="Override configuration, e.g. -d ecr.repo=my-repo")
 
     argp.sub("lint", lint, help="Lint templates")
 
