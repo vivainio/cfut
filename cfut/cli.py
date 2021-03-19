@@ -76,7 +76,7 @@ def add_template_cmd(fr: str, to: str):
     def template_cmd_handler(args):
         idd = args.id if args.id else "default"
         stack = commands.lookup_stack(idd)
-        params = [param.split("=",1) for param in args.params]
+        params = [param.split("=",1) for param in args.params or []]
         as_dict = {
             k: v for (k,v) in params
         }
