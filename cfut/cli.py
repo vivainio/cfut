@@ -19,7 +19,7 @@ from cfut.commands import (
     run_cli_parsed_output,
 )
 from cfut.models import IniFile, CfnTemplate, EcrConfig
-from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args
+from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args, apply_config_overrides
 
 
 def do_init(args):
@@ -76,9 +76,9 @@ def add_template_cmd(fr: str, to: str):
     def template_cmd_handler(args):
         idd = args.id if args.id else "default"
         stack = commands.lookup_stack(idd)
-        params = [param.split("=",1) for param in args.params or []]
+        params = [param.split("=", 1) for param in args.params or []]
         as_dict = {
-            k: v for (k,v) in params
+            k: v for (k, v) in params
         }
         if not stack.parameters:
             stack.parameters = {}
@@ -216,6 +216,8 @@ def main():
     parser = argparse.ArgumentParser()
     argp.init(parser)
     parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
+    parser.add_argument("-d", "--define", type=str, action="append", help="Override configuration")
+
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
 
@@ -242,12 +244,16 @@ def main():
 
     push = argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
     ecrls = argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
-    ecrlogin = argp.sub("ecrlogin", do_ecr_login, help="Do docker login to ecr")
+    ecrlogin = argp.sub("ecrlogin", do_ecr_login, help="Do docker login to ECR")
     add_overrider_args(push, EcrConfig)
     add_overrider_args(ecrls, EcrConfig)
     add_overrider_args(ecrlogin, EcrConfig)
 
     parsed = parser.parse_args(sys.argv[1:])
+    config = get_config()
+    if parsed.define:
+        apply_config_overrides(config, parsed.define)
+
     commands.set_profile_from_config_or_parser(parsed)
 
     argp.dispatch_parsed(parsed)
