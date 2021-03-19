@@ -216,7 +216,7 @@ def main():
     parser = argparse.ArgumentParser()
     argp.init(parser)
     parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
-    parser.add_argument("-d", "--define", type=str, action="append", help="Override configuration")
+    parser.add_argument("-d", "--define", type=str, action="append", help="Override configuration, e.g. -d ecr.repo=my-repo")
 
     argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
