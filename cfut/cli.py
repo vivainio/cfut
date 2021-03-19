@@ -23,7 +23,7 @@ from cfut.models import IniFile, CfnTemplate, EcrConfig
 from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args, apply_config_overrides
 
 
-def do_init(args):
+def create_init_file(args):
     """ initialize cfut.json"""
     if os.path.isfile(CONFIG_FILE):
         print("Config already exist! Delete cfut.json if you want to run 'init' again")
@@ -120,7 +120,7 @@ def change_to_root_dir():
         f"Config file {commands.CONFIG_FILE} not found, create it in {os.getcwd()} [y/n]? "
     )
     if resp.startswith("y"):
-        do_init(None)
+        create_init_file(None)
 
 
 def print_stacks():
@@ -223,7 +223,6 @@ def main():
     parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
     parser.add_argument("-d", "--define", type=str, action="append", help="Override configuration, e.g. -d ecr.repo=my-repo")
 
-    argp.sub("init", do_init, help="Initialize working directory")
     argp.sub("lint", lint, help="Lint templates")
 
     add_template_cmd("update", "update-stack")
