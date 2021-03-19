@@ -85,7 +85,6 @@ def add_template_cmd(fr: str, to: str):
         stack.parameters.update(as_dict)
         if args.name:
             stack.name = args.name
-        print(stack)
 
         commands.run_stack(to, stack)
 
