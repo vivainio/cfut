@@ -1,3 +1,4 @@
+import itertools
 import os
 import sys
 import argparse
@@ -24,8 +25,12 @@ from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args, ap
 
 def do_init(args):
     """ initialize cfut.json"""
-
-    template_files = Path(".").glob("**/*.y*ml")
+    if os.path.isfile(CONFIG_FILE):
+        print("Config already exist! Delete cfut.json if you want to run 'init' again")
+        return
+    template_files = itertools.chain(
+        Path(".").glob("**/*.y*ml"),
+        Path(".").glob("**/*.json"))
     templates = {
         t.stem: CfnTemplate(name=t.stem, path=str(t).replace("\\", "/"))
         for t in template_files
