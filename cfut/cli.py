@@ -185,7 +185,7 @@ def do_ecr_push(args):
 
     # agh, old docker client wants you to push every tag separately
     for t in tags:
-        c(f"docker push -q {t}")
+        c(f"docker push {t}")
 
 
 def do_ecr_ls(args):
