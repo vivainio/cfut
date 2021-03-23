@@ -1,2 +1,4 @@
 argp
 pydantic
+PyYAML
+pytest

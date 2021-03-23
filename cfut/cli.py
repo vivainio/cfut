@@ -1,7 +1,9 @@
 import itertools
 import os
+import pprint
 import sys
 import argparse
+import yaml
 
 from operator import itemgetter
 from pathlib import Path
@@ -17,7 +19,7 @@ from cfut.commands import (
     DEFAULT_OUTPUT_FORMAT,
     get_account,
     get_region,
-    run_cli_parsed_output,
+    run_cli_parsed_output, run_cli,
 )
 from cfut.models import IniFile, CfnTemplate, EcrConfig
 from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args, apply_config_overrides
@@ -65,6 +67,21 @@ def add_cloudformation_alias(fr: str, to: str, output: Optional[OutputFormat] = 
         run_cf(cmd, out)
 
     sp = argp.sub(fr, alias_handler, help="Alias: " + to)
+    sp.add_argument("other_args", nargs="*")
+
+
+def add_any_alias(fr: str, family: str, to_cmd: str, output: Optional[OutputFormat] = None):
+    out = output if output else DEFAULT_OUTPUT_FORMAT
+
+    def alias_handler(args):
+        cmd = to_cmd
+
+        if args.other_args:
+            cmd += " " + " ".join(args.other_args)
+
+        run_cli(family, cmd, out)
+
+    sp = argp.sub(fr, alias_handler, help=f"Alias: {family} {to_cmd}")
     sp.add_argument("other_args", nargs="*")
 
 
@@ -188,6 +205,18 @@ def do_ecr_push(args):
         c(f"docker push {t}")
 
 
+def do_dump_dynamo(args):
+    table = args.table
+
+    out = run_cli_parsed_output("dynamodb scan --table-name " + table)
+    simplified = [{
+            k: list(it[k].values())[0]
+            for k in it} for it in out["Items"]]
+    yamled = yaml.dump(simplified)
+    print(yamled)
+
+
+
 def do_ecr_ls(args):
     ecr = get_ecr_config_for_command(args)
     ecr_login(ecr)
@@ -258,6 +287,11 @@ def main():
     add_overrider_args(push, EcrConfig)
     add_overrider_args(ecrls, EcrConfig)
     add_overrider_args(ecrlogin, EcrConfig)
+
+    add_any_alias("dls", "dynamodb", "list-tables", OutputFormat("yaml", "TableNames[*]"))
+
+    ddump = argp.sub("ddump", do_dump_dynamo, help="Dump dynamodb table")
+    ddump.arg("table")
 
     parsed = parser.parse_args(sys.argv[1:])
     config = get_config()
