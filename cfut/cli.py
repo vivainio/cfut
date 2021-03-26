@@ -53,8 +53,13 @@ def create_init_file(args):
 
 def lint(args):
     config = get_config()
+    err = 0
     for t in config.templates.values():
-        os.system("cfn-lint " + t.path)
+        ret = os.system("cfn-lint " + t.path)
+        if ret:
+            err = ret
+    if err:
+        sys.exit(err)
 
 
 def add_cloudformation_alias(fr: str, to: str, output: Optional[OutputFormat] = None):
@@ -210,11 +215,10 @@ def do_dump_dynamo(args):
 
     out = run_cli_parsed_output("dynamodb scan --table-name " + table)
     simplified = [{
-            k: list(it[k].values())[0]
-            for k in it} for it in out["Items"]]
+        k: list(it[k].values())[0]
+        for k in it} for it in out["Items"]]
     yamled = yaml.dump(simplified)
     print(yamled)
-
 
 
 def do_ecr_ls(args):
