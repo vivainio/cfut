@@ -24,7 +24,7 @@ class OutputFormat:
         return " ".join(parts)
 
 
-DEFAULT_OUTPUT_FORMAT = OutputFormat("yaml", None)
+DEFAULT_OUTPUT_FORMAT = OutputFormat("json", None)
 
 
 def get_profile_arg():
