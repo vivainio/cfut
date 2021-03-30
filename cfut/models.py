@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from typing import Dict, Optional, List, Any
@@ -34,6 +35,12 @@ class IniFile(BaseModel):
 
 class EnvVars(BaseSettings):
     aws_default_region: Optional[str]
+
+
+@dataclass
+class StatusRules:
+    in_progress: str
+    success: str
 
 
 @lru_cache()

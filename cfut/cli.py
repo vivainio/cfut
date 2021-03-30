@@ -1,14 +1,13 @@
+import argparse
 import itertools
 import os
-import pprint
 import sys
-import argparse
-import yaml
-
 from operator import itemgetter
 from pathlib import Path
 from typing import Optional, Tuple
+
 import argp
+import yaml
 
 from cfut import commands
 from cfut.commands import (
@@ -19,9 +18,9 @@ from cfut.commands import (
     DEFAULT_OUTPUT_FORMAT,
     get_account,
     get_region,
-    run_cli_parsed_output, run_cli,
+    run_cli_parsed_output, run_cli, get_stack_status,
 )
-from cfut.models import IniFile, CfnTemplate, EcrConfig
+from cfut.models import IniFile, CfnTemplate, EcrConfig, StatusRules
 from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args, apply_config_overrides
 
 
@@ -90,7 +89,7 @@ def add_any_alias(fr: str, family: str, to_cmd: str, output: Optional[OutputForm
     sp.add_argument("other_args", nargs="*")
 
 
-def add_id_cmd(fr: str, to: str, query: Optional[str] = None):
+def add_id_cmd(fr: str, to: str, status_rule: Optional[StatusRules] = None, query: Optional[str] = None):
     output = None
     if query:
         output = OutputFormat("table", query)
@@ -98,32 +97,23 @@ def add_id_cmd(fr: str, to: str, query: Optional[str] = None):
     def id_cmd_handler(args):
         idd = args.id if args.id else "default"
 
-        commands.run_command(idd, to, output)
+        stack_name = commands.run_command(idd, to, output)
+        if status_rule:
+            commands.poll_until_status(stack_name, status_rule)
 
     sp = argp.sub(fr, id_cmd_handler, help="Call: " + to)
     sp.add_argument("id", help="Nickname of stack", nargs="?")
 
 
-def add_template_cmd(fr: str, to: str):
+def add_template_cmd(fr: str, to: str, status_rule: StatusRules):
     def template_cmd_handler(args):
-        idd = args.id if args.id else "default"
-        stack = commands.lookup_stack(idd)
-        params = [param.split("=", 1) for param in args.params or []]
-        as_dict = {
-            k: v for (k, v) in params
-        }
-        if not stack.parameters:
-            stack.parameters = {}
-        stack.parameters.update(as_dict)
-        if args.name:
-            stack.name = args.name
+        stack = commands.dispatch_stack_command(args)
 
         commands.run_stack(to, stack)
+        commands.poll_until_status(stack.name, status_rule)
 
     sp = argp.sub(fr, template_cmd_handler, help=f"Call with template: {to}")
-    sp.add_argument("id", help="Alias of stack", nargs="?")
-    sp.add_argument("--params", nargs="+", help="Params as key1=value1 key2=value2")
-    sp.add_argument("--name", type=str, help="Override name of the stack")
+    commands.add_stack_command_args_to_parser(sp)
 
 
 def find_in_parents(fname: str) -> Optional[Path]:
@@ -213,7 +203,11 @@ def do_ecr_push(args):
 def do_dump_dynamo(args):
     table = args.table
 
-    out = run_cli_parsed_output("dynamodb scan --table-name " + table)
+    err, out = run_cli_parsed_output("dynamodb scan --table-name " + table)
+    if err:
+        print(err)
+        return
+
     simplified = [{
         k: list(it[k].values())[0]
         for k in it} for it in out["Items"]]
@@ -225,7 +219,7 @@ def do_ecr_ls(args):
     ecr = get_ecr_config_for_command(args)
     ecr_login(ecr)
     repo_name = ecr.repo
-    parsed = run_cli_parsed_output(f"ecr describe-images --repository-name {repo_name}")
+    err, parsed = run_cli_parsed_output(f"ecr describe-images --repository-name {repo_name}")
     lines = parsed["imageDetails"]
     lines.sort(key=itemgetter("imagePushedAt"))
     table = [
@@ -248,6 +242,18 @@ def do_ecr_login(args):
     ecr_login(ecr)
 
 
+def do_stack_statuses(args):
+    config = get_config()
+    for stack in config.templates.values():
+        status = get_stack_status(stack.name)
+        print(f"{stack.name} {status}")
+
+
+def do_deploy_stack(args):
+    stack = commands.dispatch_stack_command(args)
+    commands.deploy_stack(stack)
+
+
 def main():
     os.environ["AWS_PAGER"] = "less"
     change_to_root_dir()
@@ -264,8 +270,8 @@ def main():
 
     argp.sub("lint", lint, help="Lint templates")
 
-    add_template_cmd("update", "update-stack")
-    add_template_cmd("create", "create-stack")
+    add_template_cmd("update", "update-stack", commands.STATUS_RULES_UPDATE)
+    add_template_cmd("create", "create-stack", commands.STATUS_RULES_CREATE)
     add_id_cmd("describe", "describe-stacks")
     add_id_cmd(
         "events",
@@ -277,7 +283,7 @@ def main():
         "describe-stack-resources",
         "StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]",
     )
-    add_id_cmd("delete", "delete-stack")
+    add_id_cmd("delete", "delete-stack", commands.STATUS_RULES_DELETE)
 
     add_cloudformation_alias(
         "ls",
@@ -295,15 +301,19 @@ def main():
     add_any_alias("dls", "dynamodb", "list-tables", OutputFormat("yaml", "TableNames[*]"))
 
     ddump = argp.sub("ddump", do_dump_dynamo, help="Dump dynamodb table")
+
+    argp.sub("status", do_stack_statuses, help="Get status for all stacks")
+
+    deploy = argp.sub("deploy", do_deploy_stack, help="Create or update stack. Will delete ROLLBACK state stacks")
+    commands.add_stack_command_args_to_parser(deploy)
+
     ddump.arg("table")
 
     parsed = parser.parse_args(sys.argv[1:])
     config = get_config()
     if parsed.define:
         apply_config_overrides(config, parsed.define)
-
     commands.set_profile_from_config_or_parser(parsed)
-
     argp.dispatch_parsed(parsed)
 
 
