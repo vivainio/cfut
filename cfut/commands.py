@@ -83,8 +83,10 @@ def run_cli_safe(family: str, subcommand: str, allowed_errors=[], output: Option
 
 def get_stack_status(stack_name: str) -> Union["NOT_EXIST"]:
     err, out = run_cli_parsed_output(f"cloudformation describe-stacks --stack-name={stack_name}")
-    if err and "does not exist" in err:
-        return "NOT_EXIST"
+    if err:
+        if "does not exist" in err:
+            return "NOT_EXIST"
+        raise Exception(f"Unknown error: {err}")
     return out["Stacks"][0]["StackStatus"]
 
 
@@ -216,6 +218,23 @@ STATUS_RULES_UPDATE = StatusRules("UPDATE_IN_PROGRESS", "UPDATE_COMPLETE")
 STATUS_RULES_DELETE = StatusRules("DELETE_IN_PROGRESS", "NOT_EXIST")
 
 
+def dump_stack_events(stack_name: str):
+    run_command(stack_name, "describe-stack-events",
+                OutputFormat(
+                    "table",
+                    "StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]"))
+
+
+class CfutError(Exception):
+    ...
+
+
+def raise_stack_failure(stack_name: str, error: str):
+    print(f"ERROR: Stack '{stack_name}' failed: {error}")
+    dump_stack_events(stack_name)
+    raise CfutError(error)
+
+
 def deploy_stack(stack: CfnTemplate):
     print("deploying", stack)
     status = get_stack_status(stack.name)
@@ -232,6 +251,8 @@ def deploy_stack(stack: CfnTemplate):
 
         poll_until_status(stack.name, STATUS_RULES_UPDATE)
         return
+    if "ROLLBACK" in status:
+        raise_stack_failure(stack.name, f"Stack {stack.name} in rollback state, you have to repair (delete?) it manually!")
 
     print(status)
 
