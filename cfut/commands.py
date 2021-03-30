@@ -43,7 +43,7 @@ def run_cli_parsed_output(cmd: str) -> Tuple[Optional[str], Any]:
     """
     command = ["aws"] + get_profile_arg() + ["--output", "json", cmd]
     full_cmd = " ".join(command)
-    p = subprocess.run(full_cmd, capture_output=True, text=True)
+    p = subprocess.run(full_cmd, capture_output=True, text=True, shell=True)
     if p.returncode != 0:
         return p.stderr, None
     out = p.stdout
