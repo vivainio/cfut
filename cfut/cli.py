@@ -276,11 +276,13 @@ def main():
     add_id_cmd(
         "events",
         "describe-stack-events",
+        None,
         "StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]",
     )
     add_id_cmd(
         "res",
         "describe-stack-resources",
+        None,
         "StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]",
     )
     add_id_cmd("delete", "delete-stack", commands.STATUS_RULES_DELETE)
