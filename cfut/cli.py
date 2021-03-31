@@ -285,9 +285,10 @@ def do_task_run(args):
     call_args = {
         "--task-definition": args.name
     }
-
+    config = get_config()
+    extra_args = " ".join(config.ecs.run_args)
     call_args = " ".join(a + " " + b for (a, b) in call_args.items())
-    commands.run_cli("ecs", "run-task " + call_args)
+    commands.run_cli("ecs", "run-task " + call_args + " " + extra_args)
 
 
 def main():
