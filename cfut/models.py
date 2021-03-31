@@ -38,6 +38,7 @@ class IniFile(BaseModel):
     ecr: Optional[EcrConfig]
     profile: Optional[str]
     templates: Dict[str, CfnTemplate]
+    logs: Optional[str]
 
 
 class EnvVars(BaseSettings):

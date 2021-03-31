@@ -291,6 +291,13 @@ def do_task_run(args):
     commands.run_cli("ecs", "run-task " + call_args + " " + extra_args)
 
 
+def do_logs(args):
+    logs = get_config().logs
+    err, cont = run_cli_parsed_output("logs describe-log-streams --order-by LastEventTime --descending --log-group-name "+ logs)
+    stream = cont["logStreams"][0]["logStreamName"]
+    err, ret = run_cli_parsed_output(f"logs get-log-events --log-group-name {logs} --log-stream-name {stream}")
+    print("\n".join(e["message"] for e in ret["events"]))
+
 def main():
     os.environ["AWS_PAGER"] = "less"
     change_to_root_dir()
@@ -358,6 +365,7 @@ def main():
 
     tdrun = argp.sub("tdrun", do_task_run, help="Run task in ECS")
     tdrun.add_argument("name")
+    argp.sub("logs", do_logs, help="Get logs")
     parsed = parser.parse_args(sys.argv[1:])
     config = get_config()
     if parsed.define:
