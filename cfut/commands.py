@@ -93,7 +93,7 @@ def get_stack_status(stack_name: str) -> Union["NOT_EXIST"]:
 def poll_until_status(stack_name: str, statusrules: StatusRules):
     while 1:
         status = get_stack_status(stack_name)
-        if status == statusrules.in_progress:
+        if "IN_PROGRESS" in status or status == statusrules.in_progress:
             print("Progress:", status)
             time.sleep(2)
             continue

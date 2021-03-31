@@ -1,5 +1,6 @@
 import argparse
 import itertools
+import json
 import os
 import sys
 from operator import itemgetter
@@ -254,6 +255,41 @@ def do_deploy_stack(args):
     commands.deploy_stack(stack)
 
 
+def do_taskdef_dump(args):
+    cli_args = {
+        "--task-definition": args.name
+    }
+    call_args = " ".join(a + " " + b for (a, b) in cli_args.items())
+    err, out = run_cli_parsed_output("ecs describe-task-definition " + call_args)
+    full_def = out["taskDefinition"]
+    bad_props = ["taskDefinitionArn", "revision", "status", "requiresAttributes", "compatibilities"]
+    for p in bad_props:
+        del full_def[p]
+    if args.rename:
+        full_def["family"] = args.rename
+    cont = json.dumps(full_def, indent=2)
+    print(cont)
+
+
+def do_taskdef_load(args):
+    call_args = {
+        "--cli-input-json": "file://" + args.file
+    }
+    call_args = " ".join(a + " " + b for (a, b) in call_args.items())
+    command = "ecs register-task-definition " + call_args
+    print(">", command)
+    commands.run_cli("ecs", "register-task-definition " + call_args)
+
+
+def do_task_run(args):
+    call_args = {
+        "--task-definition": args.name
+    }
+
+    call_args = " ".join(a + " " + b for (a, b) in call_args.items())
+    commands.run_cli("ecs", "run-task " + call_args)
+
+
 def main():
     os.environ["AWS_PAGER"] = "less"
     change_to_root_dir()
@@ -308,9 +344,19 @@ def main():
 
     deploy = argp.sub("deploy", do_deploy_stack, help="Create or update stack. Will delete ROLLBACK state stacks")
     commands.add_stack_command_args_to_parser(deploy)
-
     ddump.arg("table")
 
+    add_any_alias("tdls", "ecs", "list-task-definitions", OutputFormat("yaml", ""))
+
+    tddump = argp.sub("tddump", do_taskdef_dump, help="Describe task definition")
+    tddump.add_argument("name")
+    tddump.add_argument("--rename", help="Give new 'family' name")
+
+    tdload = argp.sub("tdload", do_taskdef_load, help="Register task definition")
+    tdload.add_argument("file")
+
+    tdrun = argp.sub("tdrun", do_task_run, help="Run task in ECS")
+    tdrun.add_argument("name")
     parsed = parser.parse_args(sys.argv[1:])
     config = get_config()
     if parsed.define:

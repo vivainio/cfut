@@ -27,6 +27,11 @@ class EcrConfig(BaseModel):
     src: str = Field(".", description="Directory where Dockerfile is")
 
 
+class EcsConfig(BaseModel):
+    cluster: Optional[str] = Field(description="Cluster where tasks are")
+    taskdefinitions: Dict[str, str]
+
+
 class IniFile(BaseModel):
     ecr: Optional[EcrConfig]
     profile: Optional[str]
