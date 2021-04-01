@@ -259,14 +259,20 @@ def do_taskdef_dump(args):
     cli_args = {
         "--task-definition": args.name
     }
+
+
     call_args = " ".join(a + " " + b for (a, b) in cli_args.items())
     err, out = run_cli_parsed_output("ecs describe-task-definition " + call_args)
     full_def = out["taskDefinition"]
     bad_props = ["taskDefinitionArn", "revision", "status", "requiresAttributes", "compatibilities"]
     for p in bad_props:
         del full_def[p]
+
     if args.rename:
         full_def["family"] = args.rename
+    if args.image:
+        full_def["containerDefinitions"][0]["image"] = args.image
+
     cont = json.dumps(full_def, indent=2)
     print(cont)
 
@@ -359,6 +365,7 @@ def main():
     tddump = argp.sub("tddump", do_taskdef_dump, help="Describe task definition")
     tddump.add_argument("name")
     tddump.add_argument("--rename", help="Give new 'family' name")
+    tddump.add_argument("--image", help="Specify image path")
 
     tdload = argp.sub("tdload", do_taskdef_load, help="Register task definition")
     tdload.add_argument("file")
