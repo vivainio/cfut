@@ -264,7 +264,8 @@ def do_taskdef_dump(args):
     call_args = " ".join(a + " " + b for (a, b) in cli_args.items())
     err, out = run_cli_parsed_output("ecs describe-task-definition " + call_args)
     full_def = out["taskDefinition"]
-    bad_props = ["taskDefinitionArn", "revision", "status", "requiresAttributes", "compatibilities"]
+    bad_props = ["taskDefinitionArn", "revision", "status", "requiresAttributes", "compatibilities", "registeredBy",
+                 "registeredAt"]
     for p in bad_props:
         del full_def[p]
 
