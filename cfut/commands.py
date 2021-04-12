@@ -243,7 +243,7 @@ def deploy_stack(stack: CfnTemplate):
         poll_until_status(stack.name, STATUS_RULES_CREATE)
         return
 
-    can_update = ["CREATE_UPDATE", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE"]
+    can_update = ["CREATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE"]
     if status in can_update:
         update_ret = run_stack("update-stack", stack)
         if update_ret == ERROR_NO_UPDATES_TO_PERFORM:
