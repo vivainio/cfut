@@ -98,7 +98,7 @@ def poll_until_status(stack_name: str, statusrules: StatusRules):
             time.sleep(2)
             continue
         if status != statusrules.success:
-            raise Exception(f"Polling expected status {statusrules.success}, got {status}")
+            raise_stack_failure(stack_name, f"Polling expected status {statusrules.success}, got {status}")
         print("Complete:", status)
         break
 
