@@ -186,7 +186,7 @@ def do_ecr_push(args):
     src_dir = ecr.src
     ecr_address, _ = get_ecr_address(ecr)
     image_name = f"{ecr_address}/{repo_name}"
-    rev = os.popen("git rev-parse HEAD").read().strip()[:8]
+    rev = "git-" + os.popen("git rev-parse HEAD").read().strip()[:8]
 
     rev_tag = f"{image_name}:{rev}" if rev else None
     config_tag = f"{image_name}:{tag}"
