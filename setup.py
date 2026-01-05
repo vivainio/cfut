@@ -8,6 +8,6 @@ setup(
     authr_email="ville.vainio@basware.com",
     url="https://github.com/vivainio/cfut",
     packages=["cfut"],
-    install_requires=["argp", "pydantic", "PyYAML"],
+    install_requires=["argp", "pydantic<2", "PyYAML"],
     entry_points={"console_scripts": ["cfut = cfut.cli:main"]},
 )
