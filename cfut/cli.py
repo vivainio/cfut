@@ -19,14 +19,20 @@ from cfut.commands import (
     DEFAULT_OUTPUT_FORMAT,
     get_account,
     get_region,
-    run_cli_parsed_output, run_cli, get_stack_status,
+    run_cli_parsed_output,
+    run_cli,
+    get_stack_status,
 )
 from cfut.models import IniFile, CfnTemplate, EcrConfig, StatusRules
-from cfut.pydantic_argparse import add_overrider_args, assign_overrider_args, apply_config_overrides
+from cfut.pydantic_argparse import (
+    add_overrider_args,
+    assign_overrider_args,
+    apply_config_overrides,
+)
 
 
 def create_init_file(args):
-    """ initialize cfut.json"""
+    """initialize cfut.json"""
     if os.path.isfile(CONFIG_FILE):
         print("Config already exist! Delete cfut.json if you want to run 'init' again")
         return
@@ -34,9 +40,13 @@ def create_init_file(args):
     def is_template(fname):
         return "AWSTemplateFormatVersion" in open(fname).read()
 
-    template_files = [fname for fname in itertools.chain(
-        Path(".").glob("**/*.y*ml"),
-        Path(".").glob("**/*.json")) if is_template(fname)]
+    template_files = [
+        fname
+        for fname in itertools.chain(
+            Path(".").glob("**/*.y*ml"), Path(".").glob("**/*.json")
+        )
+        if is_template(fname)
+    ]
 
     templates = {
         t.stem: CfnTemplate(name=t.stem, path=str(t).replace("\\", "/"))
@@ -75,7 +85,9 @@ def add_cloudformation_alias(fr: str, to: str, output: Optional[OutputFormat] = 
     sp.add_argument("other_args", nargs="*")
 
 
-def add_any_alias(fr: str, family: str, to_cmd: str, output: Optional[OutputFormat] = None):
+def add_any_alias(
+    fr: str, family: str, to_cmd: str, output: Optional[OutputFormat] = None
+):
     out = output if output else DEFAULT_OUTPUT_FORMAT
 
     def alias_handler(args):
@@ -90,7 +102,12 @@ def add_any_alias(fr: str, family: str, to_cmd: str, output: Optional[OutputForm
     sp.add_argument("other_args", nargs="*")
 
 
-def add_id_cmd(fr: str, to: str, status_rule: Optional[StatusRules] = None, query: Optional[str] = None):
+def add_id_cmd(
+    fr: str,
+    to: str,
+    status_rule: Optional[StatusRules] = None,
+    query: Optional[str] = None,
+):
     output = None
     if query:
         output = OutputFormat("table", query)
@@ -155,7 +172,7 @@ def c(s):
 
 
 def get_ecr_address(ecr: EcrConfig) -> Tuple[str, str]:
-    """ address, region """
+    """address, region"""
     region = ecr.region or get_region()
     acc = ecr.account or get_account()
     return f"{acc}.dkr.ecr.{region}.amazonaws.com", region
@@ -177,7 +194,7 @@ def ecr_login(ecr: EcrConfig):
 
 
 def do_ecr_push(args):
-    """ push docker image to ecr"""
+    """push docker image to ecr"""
     ecr = get_ecr_config_for_command(args)
     ecr_login(ecr)
 
@@ -209,9 +226,7 @@ def do_dump_dynamo(args):
         print(err)
         return
 
-    simplified = [{
-        k: list(it[k].values())[0]
-        for k in it} for it in out["Items"]]
+    simplified = [{k: list(it[k].values())[0] for k in it} for it in out["Items"]]
     yamled = yaml.dump(simplified)
     print(yamled)
 
@@ -220,7 +235,9 @@ def do_ecr_ls(args):
     ecr = get_ecr_config_for_command(args)
     ecr_login(ecr)
     repo_name = ecr.repo
-    err, parsed = run_cli_parsed_output(f"ecr describe-images --repository-name {repo_name}")
+    err, parsed = run_cli_parsed_output(
+        f"ecr describe-images --repository-name {repo_name}"
+    )
     lines = parsed["imageDetails"]
     lines.sort(key=itemgetter("imagePushedAt"))
     table = [
@@ -256,16 +273,20 @@ def do_deploy_stack(args):
 
 
 def do_taskdef_dump(args):
-    cli_args = {
-        "--task-definition": args.name
-    }
-
+    cli_args = {"--task-definition": args.name}
 
     call_args = " ".join(a + " " + b for (a, b) in cli_args.items())
     err, out = run_cli_parsed_output("ecs describe-task-definition " + call_args)
     full_def = out["taskDefinition"]
-    bad_props = ["taskDefinitionArn", "revision", "status", "requiresAttributes", "compatibilities", "registeredBy",
-                 "registeredAt"]
+    bad_props = [
+        "taskDefinitionArn",
+        "revision",
+        "status",
+        "requiresAttributes",
+        "compatibilities",
+        "registeredBy",
+        "registeredAt",
+    ]
     for p in bad_props:
         del full_def[p]
 
@@ -279,9 +300,7 @@ def do_taskdef_dump(args):
 
 
 def do_taskdef_load(args):
-    call_args = {
-        "--cli-input-json": "file://" + args.file
-    }
+    call_args = {"--cli-input-json": "file://" + args.file}
     call_args = " ".join(a + " " + b for (a, b) in call_args.items())
     command = "ecs register-task-definition " + call_args
     print(">", command)
@@ -289,9 +308,7 @@ def do_taskdef_load(args):
 
 
 def do_task_run(args):
-    call_args = {
-        "--task-definition": args.name
-    }
+    call_args = {"--task-definition": args.name}
     config = get_config()
     extra_args = " ".join(config.ecs.run_args)
     call_args = " ".join(a + " " + b for (a, b) in call_args.items())
@@ -300,10 +317,16 @@ def do_task_run(args):
 
 def do_logs(args):
     logs = get_config().logs
-    err, cont = run_cli_parsed_output("logs describe-log-streams --order-by LastEventTime --descending --log-group-name "+ logs)
+    err, cont = run_cli_parsed_output(
+        "logs describe-log-streams --order-by LastEventTime --descending --log-group-name "
+        + logs
+    )
     stream = cont["logStreams"][0]["logStreamName"]
-    err, ret = run_cli_parsed_output(f"logs get-log-events --log-group-name {logs} --log-stream-name {stream}")
+    err, ret = run_cli_parsed_output(
+        f"logs get-log-events --log-group-name {logs} --log-stream-name {stream}"
+    )
     print("\n".join(e["message"] for e in ret["events"]))
+
 
 def main():
     os.environ["AWS_PAGER"] = "less"
@@ -316,8 +339,13 @@ def main():
     parser = argparse.ArgumentParser()
     argp.init(parser)
     parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
-    parser.add_argument("-d", "--define", type=str, action="append",
-                        help="Override configuration, e.g. -d ecr.repo=my-repo")
+    parser.add_argument(
+        "-d",
+        "--define",
+        type=str,
+        action="append",
+        help="Override configuration, e.g. -d ecr.repo=my-repo",
+    )
 
     argp.sub("lint", lint, help="Lint templates")
 
@@ -351,13 +379,19 @@ def main():
     add_overrider_args(ecrls, EcrConfig)
     add_overrider_args(ecrlogin, EcrConfig)
 
-    add_any_alias("dls", "dynamodb", "list-tables", OutputFormat("yaml", "TableNames[*]"))
+    add_any_alias(
+        "dls", "dynamodb", "list-tables", OutputFormat("yaml", "TableNames[*]")
+    )
 
     ddump = argp.sub("ddump", do_dump_dynamo, help="Dump dynamodb table")
 
     argp.sub("status", do_stack_statuses, help="Get status for all stacks")
 
-    deploy = argp.sub("deploy", do_deploy_stack, help="Create or update stack. Will delete ROLLBACK state stacks")
+    deploy = argp.sub(
+        "deploy",
+        do_deploy_stack,
+        help="Create or update stack. Will delete ROLLBACK state stacks",
+    )
     commands.add_stack_command_args_to_parser(deploy)
     ddump.arg("table")
 

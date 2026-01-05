@@ -1,4 +1,4 @@
-""" argparse integration for pydantic models
+"""argparse integration for pydantic models
 
 Usage: have a model class:
 
@@ -44,7 +44,7 @@ def assign_overrider_args(obj, ns: argparse.Namespace):
 
 
 def apply_config_overrides(config_obj: Any, overrides: List[str]):
-    """ Helper to apply set of config overrides from cli
+    """Helper to apply set of config overrides from cli
 
     Example use - this will allow you to do args like
         -d foo=12 -d my.deep.path=hello
@@ -63,7 +63,7 @@ def apply_config_overrides(config_obj: Any, overrides: List[str]):
 
 
 def assign_by_path(target_obj, path: str, value: Any):
-    """ assign 'deep' object within config model or whatever, by path foo.bar.name """
+    """assign 'deep' object within config model or whatever, by path foo.bar.name"""
     parts = path.rsplit(".", 1)
     if len(parts) == 1:
         assign_to, name = target_obj, parts[0]

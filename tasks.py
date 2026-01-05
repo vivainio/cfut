@@ -14,9 +14,9 @@ def do_check(args):
     c("py -m mypy cfut")
 
 
-def do_black(args):
-    """ do 'black' reformat of all code """
-    c("py -m black cfut")
+def do_format(args):
+    """ do 'ruff format' reformat of all code """
+    c("ruff format cfut")
 
 
 def do_test(args):

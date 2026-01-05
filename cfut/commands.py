@@ -37,7 +37,7 @@ def get_profile_arg():
 
 
 def run_cli_parsed_output(cmd: str) -> Tuple[Optional[str], Any]:
-    """ run command with right profile and json output, parse it
+    """run command with right profile and json output, parse it
 
     return (err, object)
     """
@@ -52,7 +52,9 @@ def run_cli_parsed_output(cmd: str) -> Tuple[Optional[str], Any]:
     return None, parsed
 
 
-def get_run_command(family: str, subcommand: str, output: Optional[OutputFormat] = None) -> str:
+def get_run_command(
+    family: str, subcommand: str, output: Optional[OutputFormat] = None
+) -> str:
     out = (output if output else DEFAULT_OUTPUT_FORMAT).as_arg()
     profile_arg = " ".join(get_profile_arg())
     cmd = f"aws {family} {out} {profile_arg} {subcommand}"
@@ -65,7 +67,12 @@ def run_cli(family: str, subcommand: str, output: Optional[OutputFormat] = None)
     subprocess.check_call(cmd, shell=True)
 
 
-def run_cli_safe(family: str, subcommand: str, allowed_errors=[], output: Optional[OutputFormat] = None):
+def run_cli_safe(
+    family: str,
+    subcommand: str,
+    allowed_errors=[],
+    output: Optional[OutputFormat] = None,
+):
     cmd = get_run_command(family, subcommand, output)
     print("> " + cmd)
 
@@ -82,7 +89,9 @@ def run_cli_safe(family: str, subcommand: str, allowed_errors=[], output: Option
 
 
 def get_stack_status(stack_name: str) -> Union["NOT_EXIST"]:
-    err, out = run_cli_parsed_output(f"cloudformation describe-stacks --stack-name={stack_name}")
+    err, out = run_cli_parsed_output(
+        f"cloudformation describe-stacks --stack-name={stack_name}"
+    )
     if err:
         if "does not exist" in err:
             return "NOT_EXIST"
@@ -98,7 +107,10 @@ def poll_until_status(stack_name: str, statusrules: StatusRules):
             time.sleep(2)
             continue
         if status != statusrules.success:
-            raise_stack_failure(stack_name, f"Polling expected status {statusrules.success}, got {status}")
+            raise_stack_failure(
+                stack_name,
+                f"Polling expected status {statusrules.success}, got {status}",
+            )
         print("Complete:", status)
         break
 
@@ -160,7 +172,7 @@ def base_command(command_name: str, stack_name: str, template_file: Optional[str
 
 
 def run_command(stack_id: str, command_name: str, output: OutputFormat) -> str:
-    """ returns stack name """
+    """returns stack name"""
     inifile = get_config()
     # if no alias exists, just pass it through
     stack = inifile.templates.get(stack_id)
@@ -189,16 +201,14 @@ def lookup_stack(stack_id: str) -> CfnTemplate:
 
 
 def dispatch_stack_command(args: argparse.Namespace) -> CfnTemplate:
-    """ looks up the stack from args, patches in params etc
+    """looks up the stack from args, patches in params etc
 
     You should still call the right function with the stack
     """
     idd = args.id if args.id else "default"
     stack = lookup_stack(idd)
     params = [param.split("=", 1) for param in args.params or []]
-    as_dict = {
-        k: v for (k, v) in params
-    }
+    as_dict = {k: v for (k, v) in params}
     if not stack.parameters:
         stack.parameters = {}
     stack.parameters.update(as_dict)
@@ -219,14 +229,17 @@ STATUS_RULES_DELETE = StatusRules("DELETE_IN_PROGRESS", "NOT_EXIST")
 
 
 def dump_stack_events(stack_name: str):
-    run_command(stack_name, "describe-stack-events",
-                OutputFormat(
-                    "table",
-                    "StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]"))
+    run_command(
+        stack_name,
+        "describe-stack-events",
+        OutputFormat(
+            "table",
+            "StackEvents[*].[LogicalResourceId,ResourceType,ResourceStatus,Timestamp,ResourceStatusReason]",
+        ),
+    )
 
 
-class CfutError(Exception):
-    ...
+class CfutError(Exception): ...
 
 
 def raise_stack_failure(stack_name: str, error: str):
@@ -253,7 +266,10 @@ def deploy_stack(stack: CfnTemplate):
         poll_until_status(stack.name, STATUS_RULES_UPDATE)
         return
     if "ROLLBACK" in status:
-        raise_stack_failure(stack.name, f"Stack {stack.name} in rollback state, you have to repair (delete?) it manually!")
+        raise_stack_failure(
+            stack.name,
+            f"Stack {stack.name} in rollback state, you have to repair (delete?) it manually!",
+        )
 
     print(status)
 
