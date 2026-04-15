@@ -9,18 +9,23 @@ cfut is a CLI wrapper for AWS CloudFormation, ECR, ECS, and DynamoDB operations.
 ## Commands
 
 ```bash
+# Install dev dependencies
+uv sync
+
 # Type checking
-python tasks.py check
+uv run mypy cfut
 
 # Format code
-python tasks.py format
+uv run ruff format cfut
 
 # Run tests
-python tasks.py test
-
-# Publish to PyPI
-python tasks.py publish
+uv run pytest tests/
 ```
+
+Publishing is automated: create a GitHub release with tag `vX.Y.Z` and
+`.github/workflows/publish.yml` builds and uploads to PyPI via trusted
+publisher OIDC. Do not edit `version` in `pyproject.toml` manually — the
+workflow rewrites it from the release tag.
 
 ## Architecture
 
