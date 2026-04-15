@@ -7,7 +7,6 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Optional, Tuple
 
-import argp
 import yaml
 
 from cfut import commands
@@ -29,6 +28,27 @@ from cfut.pydantic_argparse import (
     assign_overrider_args,
     apply_config_overrides,
 )
+
+
+_subparsers: Optional[argparse._SubParsersAction] = None
+
+
+def _sub_init(parser: argparse.ArgumentParser) -> None:
+    global _subparsers
+    _subparsers = parser.add_subparsers(dest="_cmd")
+
+
+def _sub(name: str, handler, help: Optional[str] = None) -> argparse.ArgumentParser:
+    assert _subparsers is not None, "call _sub_init first"
+    sp = _subparsers.add_parser(name, help=help)
+    sp.set_defaults(_func=handler)
+    return sp
+
+
+def _dispatch(parsed: argparse.Namespace) -> None:
+    func = getattr(parsed, "_func", None)
+    if func:
+        func(parsed)
 
 
 def create_init_file(args):
@@ -81,7 +101,7 @@ def add_cloudformation_alias(fr: str, to: str, output: Optional[OutputFormat] = 
             cmd += " " + " ".join(args.other_args)
         run_cf(cmd, out)
 
-    sp = argp.sub(fr, alias_handler, help="Alias: " + to)
+    sp = _sub(fr, alias_handler, help="Alias: " + to)
     sp.add_argument("other_args", nargs="*")
 
 
@@ -98,7 +118,7 @@ def add_any_alias(
 
         run_cli(family, cmd, out)
 
-    sp = argp.sub(fr, alias_handler, help=f"Alias: {family} {to_cmd}")
+    sp = _sub(fr, alias_handler, help=f"Alias: {family} {to_cmd}")
     sp.add_argument("other_args", nargs="*")
 
 
@@ -119,7 +139,7 @@ def add_id_cmd(
         if status_rule:
             commands.poll_until_status(stack_name, status_rule)
 
-    sp = argp.sub(fr, id_cmd_handler, help="Call: " + to)
+    sp = _sub(fr, id_cmd_handler, help="Call: " + to)
     sp.add_argument("id", help="Nickname of stack", nargs="?")
 
 
@@ -130,7 +150,7 @@ def add_template_cmd(fr: str, to: str, status_rule: StatusRules):
         commands.run_stack(to, stack)
         commands.poll_until_status(stack.name, status_rule)
 
-    sp = argp.sub(fr, template_cmd_handler, help=f"Call with template: {to}")
+    sp = _sub(fr, template_cmd_handler, help=f"Call with template: {to}")
     commands.add_stack_command_args_to_parser(sp)
 
 
@@ -337,7 +357,7 @@ def main():
         print_stacks()
         return
     parser = argparse.ArgumentParser()
-    argp.init(parser)
+    _sub_init(parser)
     parser.add_argument("-p", "--profile", type=str, help="AWS profile to use")
     parser.add_argument(
         "-d",
@@ -347,7 +367,7 @@ def main():
         help="Override configuration, e.g. -d ecr.repo=my-repo",
     )
 
-    argp.sub("lint", lint, help="Lint templates")
+    _sub("lint", lint, help="Lint templates")
 
     add_template_cmd("update", "update-stack", commands.STATUS_RULES_UPDATE)
     add_template_cmd("create", "create-stack", commands.STATUS_RULES_CREATE)
@@ -372,9 +392,9 @@ def main():
         OutputFormat("table", "Stacks[*].[StackName,StackStatus,CreationTime]"),
     )
 
-    push = argp.sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
-    ecrls = argp.sub("ecrls", do_ecr_ls, help="List images in ECR repository")
-    ecrlogin = argp.sub("ecrlogin", do_ecr_login, help="Do docker login to ECR")
+    push = _sub("ecrpush", do_ecr_push, help="Build and push to ECR repository")
+    ecrls = _sub("ecrls", do_ecr_ls, help="List images in ECR repository")
+    ecrlogin = _sub("ecrlogin", do_ecr_login, help="Do docker login to ECR")
     add_overrider_args(push, EcrConfig)
     add_overrider_args(ecrls, EcrConfig)
     add_overrider_args(ecrlogin, EcrConfig)
@@ -383,37 +403,37 @@ def main():
         "dls", "dynamodb", "list-tables", OutputFormat("yaml", "TableNames[*]")
     )
 
-    ddump = argp.sub("ddump", do_dump_dynamo, help="Dump dynamodb table")
+    ddump = _sub("ddump", do_dump_dynamo, help="Dump dynamodb table")
 
-    argp.sub("status", do_stack_statuses, help="Get status for all stacks")
+    _sub("status", do_stack_statuses, help="Get status for all stacks")
 
-    deploy = argp.sub(
+    deploy = _sub(
         "deploy",
         do_deploy_stack,
         help="Create or update stack. Will delete ROLLBACK state stacks",
     )
     commands.add_stack_command_args_to_parser(deploy)
-    ddump.arg("table")
+    ddump.add_argument("table")
 
     add_any_alias("tdls", "ecs", "list-task-definitions", OutputFormat("yaml", ""))
 
-    tddump = argp.sub("tddump", do_taskdef_dump, help="Describe task definition")
+    tddump = _sub("tddump", do_taskdef_dump, help="Describe task definition")
     tddump.add_argument("name")
     tddump.add_argument("--rename", help="Give new 'family' name")
     tddump.add_argument("--image", help="Specify image path")
 
-    tdload = argp.sub("tdload", do_taskdef_load, help="Register task definition")
+    tdload = _sub("tdload", do_taskdef_load, help="Register task definition")
     tdload.add_argument("file")
 
-    tdrun = argp.sub("tdrun", do_task_run, help="Run task in ECS")
+    tdrun = _sub("tdrun", do_task_run, help="Run task in ECS")
     tdrun.add_argument("name")
-    argp.sub("logs", do_logs, help="Get logs")
+    _sub("logs", do_logs, help="Get logs")
     parsed = parser.parse_args(sys.argv[1:])
     config = get_config()
     if parsed.define:
         apply_config_overrides(config, parsed.define)
     commands.set_profile_from_config_or_parser(parsed)
-    argp.dispatch_parsed(parsed)
+    _dispatch(parsed)
 
 
 if __name__ == "__main__":

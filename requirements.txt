@@ -1,4 +1,3 @@
-argp
 pydantic<2
 PyYAML
 pytest
