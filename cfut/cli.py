@@ -1,4 +1,5 @@
 import argparse
+import dataclasses
 import itertools
 import json
 import os
@@ -22,8 +23,8 @@ from cfut.commands import (
     run_cli,
     get_stack_status,
 )
-from cfut.models import IniFile, CfnTemplate, EcrConfig, StatusRules
-from cfut.pydantic_argparse import (
+from cfut.models import IniFile, CfnTemplate, EcrConfig, StatusRules, dump_inifile
+from cfut.dataclass_argparse import (
     add_overrider_args,
     assign_overrider_args,
     apply_config_overrides,
@@ -77,7 +78,7 @@ def create_init_file(args):
         templates = {"default": list(templates.values())[0]}
 
     ini = IniFile(profile="default", templates=templates)
-    cont = ini.json(indent=2)
+    cont = dump_inifile(ini)
     open(CONFIG_FILE, "w").write(cont)
 
 
@@ -200,7 +201,7 @@ def get_ecr_address(ecr: EcrConfig) -> Tuple[str, str]:
 
 def get_ecr_config_for_command(parsed: argparse.Namespace):
     config = get_config()
-    ecr = config.ecr.copy()
+    ecr = dataclasses.replace(config.ecr)
     assign_overrider_args(ecr, parsed)
     return ecr
 

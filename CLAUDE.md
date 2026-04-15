@@ -28,8 +28,8 @@ python tasks.py publish
 cfut/
 ├── cli.py        # Main CLI, argument parsing, command handlers (do_* functions)
 ├── commands.py   # AWS interactions via subprocess calls to aws cli
-├── models.py     # Pydantic v1 models for cfut.json configuration
-└── pydantic_argparse.py  # CLI arg generation from Pydantic models
+├── models.py     # Dataclass models + JSON loader for cfut.json
+└── dataclass_argparse.py  # CLI arg generation from dataclass models
 ```
 
 **Entry point**: `cfut.cli:main` (installed as `cfut` command)
@@ -40,6 +40,6 @@ cfut/
 
 ## Key Constraints
 
-- Uses Pydantic v1 (pinned to `<2`)
+- Config models are stdlib dataclasses; JSON load/dump via `load_inifile` / `dump_inifile` in `models.py`
 - AWS operations use subprocess calls to `aws` CLI (not boto3)
 - Stack operations poll until completion using status rules defined in commands.py

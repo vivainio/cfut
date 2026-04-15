@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional, Dict, List, Tuple, Any, Union
 
-from cfut.models import IniFile, get_env, CfnTemplate, StatusRules
+from cfut.models import IniFile, get_env, CfnTemplate, StatusRules, load_inifile
 
 CONFIG_FILE = "cfut.json"
 
@@ -150,7 +150,7 @@ def get_config():
         )
         sys.exit(1)
 
-    current_config = IniFile.parse_raw(open(CONFIG_FILE).read())
+    current_config = load_inifile(open(CONFIG_FILE).read())
 
     return current_config
 
