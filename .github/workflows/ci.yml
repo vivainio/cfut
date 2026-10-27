@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install local AWS test tools
+        run: |
+          uv tool install roto-aws
+          uv tool install awscli
+          echo "$(uv tool dir --bin)" >> "$GITHUB_PATH"
+
+      - name: Verify test tools
+        run: |
+          roto-server --version
+          aws --version
+
+      - name: Run tests including Roto integration
+        run: uv run pytest tests/ -v

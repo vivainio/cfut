@@ -1,5 +1,17 @@
 # cfut - cli wrapper for aws cloudformation
 
+Local integration tests use [Roto](https://github.com/vivainio/roto) and the real
+AWS CLI, with a temporary server, dummy credentials, and isolated configuration:
+
+```sh
+uv tool install roto-aws
+uv run --with awscli pytest tests/test_roto.py -v
+```
+
+These cover STS account lookup, region selection, and CloudFormation stack create,
+update, and delete. They skip when `roto-server` or `aws` is unavailable. The older
+live AWS/Docker tests still require `CFUT_RUN_AWS_TESTS=1`.
+
 Invoking "aws cloudformation" gets tedious after a while because the commands are 
 pretty verbose, stack names can be long etc.
 
